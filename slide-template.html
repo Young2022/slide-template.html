@@ -1,0 +1,2560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="幻灯片讲义模板：翻页演示、大纲导航、随机提问、课堂练习，自包含单文件。">
+<!-- 安全说明：本页为自包含页面，需保留内联样式与脚本；X-Frame-Options、X-Content-Type-Options、frame-ancestors 无法通过 meta 生效，正式发布时须由服务器以 HTTP 响应头下发 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self';">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>章节标题 · 幻灯片讲义模板</title>
+<style>
+/* ============================================================
+   幻灯片讲义模板 · 样式表
+   ------------------------------------------------------------
+   目录：
+     00 变量与基础
+     01 进度条 / 导航
+     02 封面 Hero / 知识地图
+     03 内容块：卡片 / 键值表 / 表格 / 图示 / 演示 / 提示框 / 小结
+     04 课堂练习
+     05 资源卡片 / 页脚 / 返回顶部
+     06 随机提问浮窗
+     07 演示模式骨架（顶栏 / 大纲 / 控制条）
+     08 要点视图（内容超长时的降级方案）
+     09 投影字号 / 响应式 / 打印讲义
+     10 动画
+   ============================================================ */
+
+/* ============================================================
+   00 变量与基础
+   ============================================================ */
+:root {
+  --bg: #f8fafc;
+  --bg2: #f1f5f9;
+  --card: #ffffff;
+  --line: rgba(15, 23, 42, 0.08);
+  --line2: rgba(15, 23, 42, 0.16);
+  --txt: #0f172a;
+  --mut: #334155;
+  --dim: #64748b;
+  --teal: #0284c7;
+  --teal-soft: rgba(2, 132, 199, 0.10);
+  --coral: #dc2626;
+  --coral-soft: rgba(220, 38, 38, 0.10);
+  --violet: #5b21b6;
+  --violet-soft: rgba(91, 33, 182, 0.10);
+  --green: #166534;
+  --green-soft: rgba(22, 101, 52, 0.12);
+  --amber: #a34a08;
+  --amber-soft: rgba(163, 74, 8, 0.12);
+  --cyan: var(--teal);
+  --cyan-soft: var(--teal-soft);
+  --sans: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --mono: "Cascadia Mono", "SF Mono", "JetBrains Mono", Consolas, monospace;
+
+  /* 演示模式骨架尺寸 */
+  --deck-gutter: clamp(18px, 2.6vw, 46px);
+  --deck-head-h: 50px;
+  --deck-bar-h: 58px;
+  --deck-scale: 1;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--sans);
+  line-height: 1.75;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: rgba(2, 132, 199, 0.15); }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+a { color: var(--teal); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  background: var(--teal-soft);
+  border: 1px solid rgba(2, 132, 199, 0.20);
+  border-radius: 6px;
+  padding: 2px 7px;
+  color: var(--teal);
+}
+h2 { font-size: 1.55rem; line-height: 1.35; font-weight: 700; }
+h3 { font-size: 1.2rem; line-height: 1.4; font-weight: 700; }
+h4 { font-size: 1.05rem; line-height: 1.4; font-weight: 650; }
+
+/* ============================================================
+   01 进度条 / 导航
+   ============================================================ */
+.progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--teal), #38bdf8);
+  z-index: 2000; transition: width 0.08s linear;
+}
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+nav .wrap {
+  display: flex; align-items: center; gap: 16px; height: 56px;
+}
+nav .brand {
+  font-weight: 800; font-size: 15px; white-space: nowrap; color: var(--txt);
+}
+nav .brand b { color: var(--teal); }
+nav .navlinks {
+  display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1;
+  min-width: 0;   /* 允许在窄屏收缩为横向滚动条，避免撑破布局 */
+}
+nav .navlinks::-webkit-scrollbar { display: none; }
+nav .navlinks a {
+  color: var(--mut); font-size: 14.5px; padding: 7px 12px;
+  border-radius: 8px; white-space: nowrap; transition: 0.15s;
+}
+nav .navlinks a:hover { color: var(--txt); background: var(--bg2); }
+nav .navlinks a.cur {
+  color: var(--teal); background: var(--teal-soft); font-weight: 600;
+}
+nav .qbtn {
+  flex: none; background: var(--teal-soft);
+  border: 1px solid rgba(2, 132, 199, 0.28);
+  color: var(--teal); font-size: 14px; padding: 7px 14px;
+  border-radius: 9px; cursor: pointer; font-family: inherit; transition: 0.15s;
+}
+nav .qbtn:hover { background: rgba(2, 132, 199, 0.16); }
+/* 同样的按钮样式也可放在页面其他位置 */
+.qbtn {
+  background: var(--teal-soft);
+  border: 1px solid rgba(2, 132, 199, 0.28);
+  color: var(--teal); font-size: 14px; padding: 7px 14px;
+  border-radius: 9px; cursor: pointer; font-family: inherit; transition: 0.15s;
+}
+.qbtn:hover { background: rgba(2, 132, 199, 0.16); }
+.presentation-launch {
+  flex: none; border: 1px solid rgba(2,132,199,.3); border-radius: 9px;
+  background: var(--teal); color: #fff; padding: 8px 12px; font: 650 13px var(--sans);
+  cursor: pointer; white-space: nowrap;
+}
+.presentation-launch:hover { background: #0369a1; }
+.presentation-launch[aria-pressed="true"] { background: #0369a1; }
+
+/* 品牌 logo */
+nav .brand-logo {
+  display: flex; align-items: center; gap: 9px;
+  text-decoration: none; flex-shrink: 0;
+}
+nav .brand-logo:hover { text-decoration: none; }
+.logo-icon-wrapper {
+  width: 32px; height: 32px; flex: none;
+  background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.25);
+}
+.logo-icon-wrapper svg { width: 18px; height: 18px; }
+.brand-title {
+  font-size: 1.05rem; font-weight: 900; letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #0284c7, #4f46e5);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+nav .brand { padding-left: 14px; border-left: 1px solid var(--line2); }
+@media (max-width: 760px) { .brand-title { display: none; } }
+
+/* ============================================================
+   02 封面 Hero / 知识地图
+   ============================================================ */
+.hero {
+  position: relative; overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  padding: 28px 0 2%;
+  background: linear-gradient(165deg, #e0f2fe 0%, #f0f9ff 60%);
+}
+.hero .wrap { max-width: 1080px; }
+.hero h1 {
+  font-size: 2.15rem; font-weight: 800; letter-spacing: -0.02em;
+  margin-bottom: 12px; color: var(--txt);
+}
+.hero .sub {
+  font-size: 1.05rem; color: var(--mut); max-width: 820px;
+  line-height: 1.7; margin-bottom: 28px;
+}
+.hero h1 .hl, .hl { color: var(--teal); font-style: normal; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.chip {
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--mut);
+  box-shadow: 0 1px 4px rgba(40,35,30,0.04);
+  min-width: 120px;
+}
+.chip b {
+  display: block; font-size: 18px; font-weight: 800;
+  font-family: var(--mono); color: var(--teal); line-height: 1.3;
+}
+.chip span { font-size: 13px; }
+.tagline {
+  display: flex; flex-wrap: wrap; gap: 8px 14px;
+  margin-top: 16px; font-size: 14px; color: var(--dim);
+}
+.tagline span { position: relative; padding-left: 12px; }
+.tagline span::before {
+  content: ""; position: absolute; left: 0; top: 0.55em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--teal);
+}
+
+div.map { padding: 28px 0 8px; }
+div.map > .wrap {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 2px 12px rgba(40,35,30,0.04);
+}
+div.map h2 { font-size: 1.15rem; margin-bottom: 6px; color: var(--txt); }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 4px; }
+.flow .node {
+  background: var(--bg);
+  border: 1.5px solid var(--line2);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px; font-weight: 650;
+  text-align: center; min-width: 110px;
+}
+.flow .node b { display: block; font-size: 14.5px; font-weight: 700; color: var(--txt); }
+.flow .node span {
+  display: block; font-size: 12.5px; color: var(--mut); margin-top: 3px; font-weight: 500;
+}
+.flow .arr { color: var(--dim); font-weight: 700; padding: 0 4px; font-size: 16px; }
+
+/* ============================================================
+   03 内容块
+   ============================================================ */
+section { padding: 52px 0 12px; }
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
+.sec-num {
+  font-size: 1.8rem; font-weight: 800; opacity: 0.85; line-height: 1;
+  border: 1px solid transparent; border-radius: 10px; padding: 4px 10px;
+}
+.sec-lead {
+  font-size: 1.05rem; color: var(--mut);
+  margin-bottom: 28px; max-width: 900px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 8px rgba(40, 35, 30, 0.03);
+  border-left: 4px solid var(--acc, var(--teal));
+}
+.card h3 {
+  margin-bottom: 12px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+}
+.card h3 .sub { font-size: 0.9rem; font-weight: 500; color: var(--mut); }
+.card > p { margin-bottom: 10px; color: var(--mut); font-size: 16.5px; line-height: 1.75; }
+.card > p b { color: var(--txt); }
+.badge {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  padding: 2px 9px; border-radius: 999px;
+  background: var(--amber-soft); color: var(--amber);
+  border: 1px solid rgba(163,74,8,0.28);
+  vertical-align: middle; margin-left: 6px;
+}
+
+/* 键值表 */
+.kv { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.kv .it {
+  display: grid; grid-template-columns: 160px 1fr;
+  gap: 12px; padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.kv .it:last-child { border-bottom: none; }
+.kv .it b { font-size: 15.5px; color: var(--txt); font-weight: 650; }
+.kv .it span { font-size: 16px; color: var(--mut); line-height: 1.65; }
+
+/* 表格 */
+.tbl { overflow-x: auto; margin: 14px 0; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.tbl th, .tbl td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); }
+.tbl th { background: var(--bg2); font-weight: 650; color: var(--txt); font-size: 15px; }
+.tbl td { color: var(--mut); }
+.tbl tr:hover td { background: rgba(2, 132, 199, 0.03); }
+
+/* 步骤 */
+.steps-v { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.steps-v .step {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start;
+  font-size: 16.5px; line-height: 1.65;
+}
+.steps-v .step .n {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; height: 26px; border-radius: 8px;
+  background: var(--teal-soft); color: var(--teal);
+  font-size: 13.5px; font-weight: 800; flex: 0 0 auto;
+}
+
+/* 提示框 */
+.warn, .tipbox, .sum1 {
+  border-radius: 12px; padding: 14px 18px; margin: 16px 0;
+  font-size: 16.5px; line-height: 1.7;
+}
+.warn { background: var(--amber-soft); border: 1px solid rgba(163, 74, 8, 0.28); color: #6b3206; }
+.tipbox { background: var(--teal-soft); border: 1px solid rgba(2, 132, 199, 0.25); color: #0a4540; }
+.sum1 {
+  background: linear-gradient(135deg, var(--teal-soft), rgba(20, 184, 166, 0.06));
+  border: 1px solid rgba(2, 132, 199, 0.15); font-weight: 500;
+}
+.sum1 b { color: var(--teal); }
+
+/* 小结框 */
+.summary-box {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 18px 22px; margin: 20px 0 28px;
+  border-top: 3px solid var(--acc, var(--teal));
+}
+.summary-box .t { font-weight: 700; font-size: 16px; margin-bottom: 10px; color: var(--txt); }
+.summary-box ul { padding-left: 20px; color: var(--mut); font-size: 16px; }
+.summary-box li { margin-bottom: 6px; line-height: 1.65; }
+
+/* 图示 */
+.fig {
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: 12px; padding: 16px; margin: 14px 0; overflow-x: auto;
+}
+.fig .cap, .fig .figcap {
+  font-size: 14.5px; color: var(--mut);
+  margin-bottom: 12px; text-align: center;
+}
+.fig .figcap { margin: 12px 0 0; }
+.fig svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+
+/* 交互演示区 */
+.demo {
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 18px 20px; margin: 14px 0; background: var(--bg);
+}
+.demo .demo-t {
+  font-weight: 800; color: var(--teal); font-size: 15px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.demo label { font-size: 14.5px; color: var(--mut); margin-right: 8px; }
+.demo input[type=number],
+.demo input[type=text],
+.demo select {
+  border: 1.5px solid var(--line2); background: var(--card); color: var(--txt);
+  border-radius: 9px; padding: 8px 12px; font-size: 15px;
+  font-family: var(--mono); margin-right: 8px;
+}
+.demo input:focus, .demo select:focus { outline: none; border-color: var(--teal); }
+.demo .btn {
+  border: 1px solid rgba(2,132,199,0.35); background: var(--teal-soft); color: var(--teal);
+  border-radius: 9px; padding: 9px 16px; font-size: 14.5px; font-weight: 650;
+  cursor: pointer; font-family: inherit; transition: 0.15s; margin: 4px 4px 4px 0;
+}
+.demo .btn:hover { background: rgba(2,132,199,0.18); }
+.demo .btn.amber {
+  border-color: rgba(163,74,8,0.35);
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.demo .btn.amber:hover { background: rgba(163,74,8,0.18); }
+.demo .out { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.demo .box {
+  flex: 1; min-width: 120px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 14px; text-align: center;
+}
+.demo .box b {
+  display: block; font-size: 12.5px; color: var(--dim); font-weight: 600; margin-bottom: 4px;
+}
+.demo .box .v {
+  font-family: var(--mono); font-size: 18px; color: var(--teal); font-weight: 700; letter-spacing: 0.5px;
+}
+.demo .steps, .steps {
+  display: none; margin-top: 14px;
+  border-top: 1px dashed var(--line2); padding-top: 12px;
+}
+.demo .steps.show, .steps.show { display: block; }
+.demo .step, .step {
+  display: flex; gap: 10px; align-items: baseline;
+  font-family: var(--mono); font-size: 14px; color: var(--txt); padding: 4px 0; line-height: 1.6;
+}
+.demo .step .n, .step .n {
+  color: var(--dim); font-size: 12.5px; min-width: 42px; font-weight: 700;
+}
+.demo .step.hl, .step.hl { color: var(--amber); font-weight: 600; }
+/* 演示区里的寄存器 / 指标条 */
+.demo .regs {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0;
+}
+
+/* 对照卡片（两种方案 / 两组概念并排） */
+.cmp2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 14px 0; }
+.cmp {
+  border-radius: 12px; padding: 16px 18px;
+  border: 1px solid var(--line2);
+}
+.cmp.arch { background: rgba(2, 132, 199, .07); border-color: rgba(2, 132, 199, .32); }
+.cmp.org  { background: rgba(22, 101, 52, .07); border-color: rgba(22, 101, 52, .30); }
+.cmp h4 { font-size: 16.5px; font-weight: 750; margin-bottom: 6px; }
+.cmp.arch h4 { color: var(--teal); }
+.cmp.org h4 { color: var(--green); }
+.cmp-focus { font-size: 14.5px; margin-bottom: 8px; }
+.cmp.arch .cmp-focus { color: #0369a1; }
+.cmp.org .cmp-focus { color: var(--green); }
+.cmp ul { list-style: none; padding: 0; margin: 0; }
+.cmp li {
+  position: relative; padding-left: 20px; margin-bottom: 5px;
+  font-size: 15px; line-height: 1.55; color: var(--mut);
+}
+.cmp li::before { content: "▸"; position: absolute; left: 0; top: 0; font-weight: 700; }
+.cmp.arch li::before { color: var(--teal); }
+.cmp.org li::before { color: var(--green); }
+.cmp-note {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--line2);
+  font-size: 14.5px; line-height: 1.6; color: var(--mut);
+}
+@media (max-width: 860px) { .cmp2 { grid-template-columns: 1fr; } }
+
+/* 编号作业 / 趋势列表 */
+ol.trends { counter-reset: trend; list-style: none; padding: 0; margin: 10px 0; }
+ol.trends li {
+  counter-increment: trend; position: relative;
+  padding: 12px 0 12px 52px;
+  border-bottom: 1px dashed var(--line);
+  font-size: 16.5px; line-height: 1.65; color: var(--mut);
+}
+ol.trends li:last-child { border-bottom: none; }
+ol.trends li::before {
+  content: counter(trend);
+  position: absolute; left: 0; top: 13px;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--teal); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+}
+ol.trends li strong { color: var(--txt); }
+
+/* 双栏 / 三栏 */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 720px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+pre {
+  font-family: var(--mono); font-size: 14px; color: var(--txt);
+  line-height: 1.75; margin: 0; white-space: pre-wrap;
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 14px 16px; overflow-x: auto;
+}
+
+/* 双语对照：定义 / 概念句的英文释义 */
+.en {
+  display: block; margin: 6px 0 2px; padding-left: 11px;
+  border-left: 3px solid rgba(2, 132, 199, .30);
+  font-size: 15.5px; font-weight: 500; line-height: 1.62;
+  color: var(--mut); letter-spacing: .1px;
+}
+.en b { color: var(--txt); font-weight: 700; }
+.en.td {
+  display: block; margin: 3px 0 0; padding-left: 0;
+  border-left: 0; font-size: 12.5px; color: var(--dim); line-height: 1.4;
+}
+.en code { font-size: .94em; }
+
+/* ============================================================
+   04 课堂练习
+   ============================================================ */
+.quiz-head { display: flex; align-items: center; gap: 12px; margin: 32px 0 14px; }
+.quiz-head .qn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--acc, var(--teal)); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px;
+}
+.quiz-head .qt { font-size: 1.1rem; font-weight: 700; }
+.quiz { margin-bottom: 24px; }
+.quiz .q {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+}
+.quiz .stem {
+  font-size: 17px; font-weight: 600; margin-bottom: 12px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.quiz .stem .idx {
+  background: var(--bg2); color: var(--mut);
+  font-size: 13.5px; font-weight: 700;
+  min-width: 24px; height: 24px; border-radius: 7px;
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+}
+.quiz .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.quiz .opt {
+  text-align: left; font-family: inherit; font-size: 15.5px;
+  padding: 11px 14px; border-radius: 10px;
+  border: 1.5px solid var(--line2);
+  background: var(--bg); color: var(--txt);
+  cursor: pointer; transition: 0.15s;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.quiz .opt:hover:not(:disabled) { border-color: var(--teal); background: var(--teal-soft); }
+.quiz .opt .k { font-weight: 700; color: var(--teal); min-width: 18px; }
+.quiz .opt.correct { border-color: var(--green); background: var(--green-soft); }
+.quiz .opt.wrong { border-color: #dc2626; background: rgba(220, 38, 38, 0.08); }
+.quiz .opt:disabled { cursor: default; opacity: 0.95; }
+.quiz .qexp {
+  display: none; margin-top: 12px; padding: 12px 14px;
+  background: var(--bg); border-radius: 10px;
+  font-size: 15.5px; color: var(--mut); line-height: 1.7;
+}
+.quiz .qexp.show { display: block; }
+.quiz .qexp .ans-line { color: var(--green); font-weight: 650; }
+.quiz .qexp .retry {
+  display: inline-block; margin-left: 12px;
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  padding: 3px 10px; border-radius: 6px;
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  background: var(--teal-soft); color: var(--teal);
+  cursor: pointer; vertical-align: middle; transition: 0.15s;
+}
+.quiz .qexp .retry:hover { background: rgba(2, 132, 199, 0.18); border-color: var(--teal); }
+.q-reveal {
+  display: none; margin-top: 10px; margin-left: 8px;
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  padding: 4px 12px; border-radius: 6px;
+  border: 1px dashed rgba(220, 38, 38, .45);
+  background: var(--coral-soft); color: var(--coral); cursor: pointer;
+}
+.q-reveal:hover { background: rgba(220, 38, 38, .18); }
+/* 课堂练习：演示模式下直接揭晓答案 */
+body.presentation-mode .q-reveal { display: inline-block; }
+
+/* ============================================================
+   05 资源卡片 / 页脚 / 返回顶部
+   ============================================================ */
+.res-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px; margin-top: 18px;
+}
+.res-card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 18px; transition: 0.18s;
+}
+.res-card:hover {
+  border-color: rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.08);
+}
+.res-card h4 { font-size: 16.5px; color: var(--teal); margin-bottom: 6px; }
+.res-card .url {
+  font-family: var(--mono); font-size: 13.5px;
+  color: var(--amber); word-break: break-all; margin-bottom: 8px;
+}
+.res-card p { font-size: 15px; color: var(--mut); line-height: 1.6; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 36px 0 80px; margin-top: 48px;
+  color: var(--dim); font-size: 14.5px; text-align: center; line-height: 1.9;
+}
+.back-top {
+  position: fixed; bottom: 28px; right: 28px;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--card); border: 1px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: 0.2s; z-index: 40; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.back-top.show { opacity: 1; pointer-events: auto; }
+.back-top:hover { background: var(--bg2); border-color: var(--teal); }
+.back-top svg { width: 20px; height: 20px; color: var(--teal); }
+
+/* ============================================================
+   06 随机提问浮窗
+   ============================================================ */
+.qz-widget {
+  position: fixed; bottom: 90px; right: 24px; width: 300px;
+  background: var(--card); border: 1px solid var(--line2);
+  border-radius: 16px; box-shadow: 0 8px 32px rgba(40,35,30,0.14);
+  z-index: 100; font-size: 14.5px; overflow: hidden; display: none;
+}
+.qz-widget.show { display: block; }
+.qz-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; background: var(--bg2);
+  border-bottom: 1px solid var(--line); font-weight: 700;
+}
+.qz-head .date { font-weight: 500; color: var(--mut); margin-left: 8px; font-size: 13px; }
+.qz-fold {
+  background: none; border: none; font-size: 18px; cursor: pointer;
+  color: var(--mut); width: 28px; height: 28px; border-radius: 6px; line-height: 1;
+}
+.qz-fold:hover { background: var(--line); color: var(--txt); }
+.qz-body { padding: 14px; }
+.qz-classes { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.qz-classes button {
+  font-family: inherit; font-size: 13.5px; padding: 5px 12px;
+  border-radius: 8px; border: 1px solid var(--line2);
+  background: var(--bg); cursor: pointer; color: var(--mut);
+}
+.qz-classes button.on {
+  background: var(--teal-soft); border-color: var(--teal); color: var(--teal); font-weight: 650;
+}
+.qz-result {
+  text-align: center; min-height: 70px;
+  display: flex; flex-direction: column; justify-content: center; margin-bottom: 12px;
+}
+.qz-result .tip { color: var(--dim); }
+.qz-result .nm { font-size: 1.4rem; font-weight: 800; color: var(--txt); }
+.qz-result .id { font-size: 13.5px; color: var(--mut); margin-top: 2px; }
+.qz-toggle {
+  width: 100%; font-family: inherit; font-size: 15px; font-weight: 650;
+  padding: 11px; border-radius: 10px; border: none;
+  background: var(--teal); color: #fff; cursor: pointer; transition: 0.15s;
+}
+.qz-toggle:hover { background: #0c4a6e; }
+.qz-toggle.on { background: var(--coral); }
+.qz-rows { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.qz-rows button {
+  flex: 1; font-family: inherit; font-size: 13px;
+  padding: 7px 8px; border-radius: 8px;
+  border: 1px solid var(--line2); background: var(--bg); cursor: pointer; color: var(--mut);
+}
+.qz-rows button:hover { border-color: var(--teal); color: var(--teal); }
+.qz-note { margin-top: 10px; font-size: 13.5px; color: var(--mut); display: none; }
+.qz-list { margin-top: 10px; max-height: 140px; overflow-y: auto; font-size: 13.5px; display: none; }
+.qz-list .log-line {
+  padding: 5px 0; border-bottom: 1px dashed var(--line); color: var(--mut);
+}
+.qz-stats {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px; font-size: 13.5px; color: var(--mut);
+}
+.qz-stats button {
+  font-family: inherit; font-size: 12.5px; padding: 4px 10px;
+  border-radius: 6px; border: 1px solid var(--line2);
+  background: var(--bg); cursor: pointer; color: var(--mut);
+}
+/* 随机提问：演示模式下依然可用，且不被控制条遮住 */
+body.presentation-mode .qz-widget {
+  bottom: calc(var(--deck-bar-h) + 12px);
+  right: 16px;
+  width: 306px;
+  z-index: 3050;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, .22);
+}
+
+/* ============================================================
+   07 演示模式骨架
+   ------------------------------------------------------------
+   幻灯片层级：
+     封面 → 知识地图 → [每节拆成若干分片]
+     分片类型：content（正文）/ fig（图示）/ demo（交互演示）
+               summary（本节小结）/ exercise（课堂练习，一题一屏）
+   三个关键机制：
+     1) .deck-off        非当前分片隐藏（不移动任何 DOM 节点）
+     2) --deck-scale     内容超高时按比例缩放，保证整屏可见
+     3) .deck-head + .presenter-bar   顶栏面包屑与底部控制条
+   ============================================================ */
+
+/* ---------- 顶栏：章节面包屑 ---------- */
+.deck-head {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2900;
+  height: var(--deck-head-h);
+  display: none; align-items: center; gap: 12px;
+  padding: 0 clamp(14px, 2.4vw, 34px);
+  background: rgba(248, 250, 252, 0.94);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  font-size: 14px; color: var(--mut); user-select: none;
+}
+.deck-head .dh-brand { font-weight: 800; color: var(--txt); white-space: nowrap; }
+.deck-head .dh-brand b { color: var(--teal); }
+.deck-head .dh-sep { color: var(--line2); }
+.deck-head .dh-crumb {
+  font-weight: 600; color: var(--mut);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.deck-head .dh-spacer { flex: 1 1 auto; min-width: 8px; }
+.deck-head .dh-badge {
+  flex: none; font-size: 12.5px; font-weight: 700; letter-spacing: .3px;
+  padding: 3px 11px; border-radius: 999px;
+  background: var(--teal-soft); color: var(--teal);
+  border: 1px solid rgba(2, 132, 199, .24);
+}
+.deck-head .dh-badge[data-kind="summary"] {
+  background: var(--violet-soft); color: var(--violet); border-color: rgba(91, 33, 182, .22);
+}
+.deck-head .dh-badge[data-kind="exercise"] {
+  background: var(--coral-soft); color: var(--coral); border-color: rgba(220, 38, 38, .22);
+}
+.deck-head .dh-badge[data-kind="key"] {
+  background: var(--amber-soft); color: var(--amber); border-color: rgba(163, 74, 8, .24);
+}
+
+/* ---------- 大纲面板（知识结构导航） ---------- */
+.deck-outline {
+  position: fixed; top: var(--deck-head-h); bottom: var(--deck-bar-h); left: 0; z-index: 2950;
+  width: min(380px, 84vw);
+  background: rgba(255, 255, 255, .97);
+  border-right: 1px solid var(--line2);
+  box-shadow: 14px 0 36px rgba(15, 23, 42, .10);
+  display: none; flex-direction: column;
+  backdrop-filter: blur(12px);
+}
+.deck-outline.open { display: flex; }
+.deck-outline .do-head {
+  flex: none; display: flex; align-items: baseline; gap: 10px;
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+  font-weight: 800; font-size: 14.5px; color: var(--txt);
+}
+.deck-outline .do-head span { font-weight: 500; font-size: 12px; color: var(--dim); }
+.deck-outline .do-body { flex: 1; overflow-y: auto; padding: 6px 10px 18px; }
+.deck-outline .do-sec {
+  font-size: 11.5px; font-weight: 800; color: var(--dim); letter-spacing: .8px;
+  padding: 14px 8px 5px;
+}
+.deck-outline .do-item {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 7px 9px; border: 0; border-radius: 9px; background: transparent;
+  font: 500 13.5px/1.45 var(--sans); color: var(--mut); text-align: left; cursor: pointer;
+}
+.deck-outline .do-item:hover { background: var(--bg2); color: var(--txt); }
+.deck-outline .do-item.cur { background: var(--teal-soft); color: var(--teal); font-weight: 700; }
+.deck-outline .do-num {
+  flex: none; width: 26px; text-align: right; font: 700 11.5px var(--mono); color: var(--dim);
+}
+.deck-outline .do-item.cur .do-num { color: var(--teal); }
+.deck-outline .do-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deck-outline .do-kind {
+  flex: none; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 5px;
+  background: var(--bg2); color: var(--dim);
+}
+.deck-outline .do-kind[data-kind="summary"] { background: var(--violet-soft); color: var(--violet); }
+.deck-outline .do-kind[data-kind="exercise"] { background: var(--coral-soft); color: var(--coral); }
+.deck-outline .do-kind[data-kind="demo"] { background: var(--teal-soft); color: var(--teal); }
+
+/* ---------- 演示模式：骨架 ---------- */
+body.presentation-mode { overflow: hidden; }
+body.presentation-mode > nav,
+body.presentation-mode > .progress,
+body.presentation-mode > .back-top,
+body.presentation-mode > footer { display: none !important; }
+body.presentation-mode > header.hero,
+body.presentation-mode > div.map,
+body.presentation-mode > section { display: none !important; }
+body.presentation-mode > header.hero.deck-on { display: flex !important; }
+body.presentation-mode > div.map.deck-on,
+body.presentation-mode > section.deck-on { display: block !important; }
+body.presentation-mode .deck-off { display: none !important; }
+body.presentation-mode .deck-head { display: flex; }
+body.presentation-mode .presenter-bar { display: flex; }
+
+/* 封面 */
+body.presentation-mode > header.hero.deck-on {
+  align-items: center; justify-content: center;
+  min-height: 100vh; min-height: 100dvh;
+  padding: calc(var(--deck-head-h) + var(--deck-gutter)) var(--deck-gutter)
+           calc(var(--deck-bar-h) + var(--deck-gutter));
+}
+body.presentation-mode > header.hero.deck-on .wrap { width: min(1180px, 100%); }
+body.presentation-mode > header.hero.deck-on h1 { font-size: clamp(1.9rem, 4.2vw, 3.3rem); }
+body.presentation-mode > header.hero.deck-on .sub { font-size: clamp(1rem, 1.4vw, 1.2rem); }
+
+/* 知识地图 */
+body.presentation-mode > div.map.deck-on {
+  min-height: 100vh; min-height: 100dvh;
+  padding: calc(var(--deck-head-h) + var(--deck-gutter)) 0
+           calc(var(--deck-bar-h) + var(--deck-gutter));
+  display: flex; align-items: center;
+}
+body.presentation-mode > div.map.deck-on .wrap { width: min(1180px, 100%); }
+
+/* 内容节：整屏舞台 */
+body.presentation-mode > section.deck-on { padding: var(--deck-head-h) 0 var(--deck-bar-h); }
+body.presentation-mode > section.deck-on .wrap {
+  width: min(1300px, 100%); max-width: 1300px; margin: 0 auto;
+  height: calc(100vh - var(--deck-head-h) - var(--deck-bar-h));
+  height: calc(100dvh - var(--deck-head-h) - var(--deck-bar-h));
+  padding: var(--deck-gutter) clamp(16px, 2.4vw, 40px);
+  display: flex; flex-direction: column;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.sec-head h2 b { margin-right: .45em; }
+body.presentation-mode > section.deck-on .sec-head { margin-bottom: 8px; flex: none; }
+body.presentation-mode > section.deck-on .sec-head h2 { font-size: clamp(1.15rem, 1.9vw, 1.65rem); }
+body.presentation-mode > section.deck-on .sec-lead { font-size: 15px; margin-bottom: 12px; }
+body.presentation-mode > section.deck-on .card { box-shadow: 0 8px 28px rgba(15, 23, 42, .055); }
+
+/* 当前页主体：垂直居中 + 自适应缩放（卡片 / 图示 / 演示通用） */
+body.presentation-mode > section.deck-on .deck-scale-target {
+  flex: none; margin-block: auto; zoom: var(--deck-scale); width: 100%;
+}
+body.presentation-mode > section.deck-on .card h3 { font-size: clamp(1.2rem, 2vw, 1.7rem); }
+
+/* 图示按固定版式宽度排版：缩放目标若用 width:100%，
+   浏览器 zoom 会把「100%」反向放大，图示高度几乎不随缩放变化。 */
+body.presentation-mode > section.deck-on .deck-scale-target.fig {
+  width: min(100%, 1240px); margin-left: auto; margin-right: auto;
+}
+body.presentation-mode > section.deck-on .deck-scale-target.fig .figcap { margin-top: 8px; }
+/* 课堂练习：题目块在整屏内垂直居中 */
+body.presentation-mode > section.deck-on .quiz-head { flex: none; }
+body.presentation-mode > section.deck-on .quiz { margin-top: auto; margin-bottom: auto; }
+/* 揭晓答案：作答后即隐藏，避免与解析重复 */
+.quiz .q.done .q-reveal { display: none !important; }
+
+/* ---------- 底部控制条 ---------- */
+.presenter-bar {
+  position: fixed; inset: auto 0 0 0; z-index: 3000; display: none;
+  align-items: center; gap: 10px;
+  padding: 10px max(16px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  color: #f8fafc; background: rgba(15, 23, 42, .95);
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 -8px 28px rgba(15, 23, 42, .16); backdrop-filter: blur(12px);
+}
+.presenter-bar .p-count { color: #bae6fd; font: 700 13px var(--mono); white-space: nowrap; }
+.presenter-bar .p-spacer { flex: 1 1 auto; }
+.presenter-bar button {
+  border: 1px solid rgba(255, 255, 255, .24); border-radius: 9px; padding: 8px 12px;
+  background: #1e293b; color: #fff; font: 600 13px var(--sans); cursor: pointer; white-space: nowrap;
+}
+.presenter-bar button:hover { background: #334155; }
+.presenter-bar button:disabled { opacity: .35; cursor: not-allowed; }
+.presenter-bar button[aria-pressed="true"] { background: #0369a1; border-color: #38bdf8; }
+.presenter-bar .p-exit { background: #0369a1; border-color: #0284c7; }
+.presenter-progress {
+  position: absolute; height: 3px; left: 0; top: 0; width: 0;
+  background: linear-gradient(90deg, #38bdf8, #818cf8); transition: width .18s ease;
+}
+body.presentation-mode .presenter-bar button:focus-visible { outline: 3px solid #7dd3fc; outline-offset: 2px; }
+
+/* ============================================================
+   08 要点视图（内容过长时的降级方案）
+   ============================================================ */
+.deck-key { display: none; }
+.deck-key.on { display: block; }
+.deck-key .dk-head {
+  display: inline-block; margin-bottom: 16px;
+  font-size: 15px; font-weight: 800; letter-spacing: 1.2px;
+  color: #fff; background: var(--teal);
+  padding: 6px 16px; border-radius: 999px;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, .28);
+}
+.deck-key .dk-list { list-style: none; padding: 0; margin: 0; }
+.deck-key .dk-list li {
+  position: relative; padding-left: 28px; margin-bottom: 14px;
+  font-size: 19px; line-height: 1.55; color: var(--txt);
+}
+.deck-key .dk-list li::before {
+  content: ''; position: absolute; left: 5px; top: 11px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--teal); box-shadow: 0 0 0 4px var(--teal-soft);
+}
+.deck-key .dk-sum {
+  margin-top: 20px; padding: 14px 18px; border-radius: 12px;
+  background: var(--teal-soft); border: 1px solid rgba(2, 132, 199, .22);
+  font-size: 17px; line-height: 1.68; color: var(--mut);
+}
+.deck-key .dk-sum b { color: var(--teal); }
+.deck-key .dk-hint {
+  margin-top: 16px; padding-top: 12px;
+  border-top: 1px dashed var(--line2);
+  font-size: 14px; color: var(--dim); letter-spacing: .2px;
+}
+.deck-key .dk-hint b {
+  display: inline-block; padding: 1px 7px; margin: 0 2px;
+  border: 1px solid var(--line2); border-bottom-width: 2px; border-radius: 5px;
+  background: var(--bg2); color: var(--mut); font-family: var(--mono); font-size: 13px;
+}
+/* 要点较多 → 双栏排布，保证整屏可见 */
+.deck-key.dk-cols .dk-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0 30px; }
+.deck-key.dk-cols .dk-list li { margin-bottom: 12px; }
+.deck-key.dk-dense .dk-list li { font-size: 17px; margin-bottom: 9px; }
+.deck-key.dk-dense .dk-sum { font-size: 15.5px; }
+
+/* ---------- 投影模式：要点视图进一步放大 ---------- */
+body.presentation-mode .deck-key .dk-head { font-size: 16px; }
+body.presentation-mode .deck-key .dk-list li { font-size: 20.5px; margin-bottom: 16px; }
+body.presentation-mode .deck-key .dk-sum { font-size: 18px; }
+body.presentation-mode .deck-key .dk-hint { font-size: 15.5px; }
+body.presentation-mode .deck-key.dk-cols .dk-list li { margin-bottom: 13px; }
+body.presentation-mode .deck-key.dk-dense .dk-list li { font-size: 18px; margin-bottom: 10px; }
+body.presentation-mode .deck-key.dk-dense .dk-sum { font-size: 16.5px; }
+
+/* ============================================================
+   09 投影字号 / 响应式 / 打印讲义
+   ============================================================ */
+.hero-chips span { font-size: 14.5px; }
+.map-t { font-size: 15px; }
+.map-line { font-size: 16px; }
+.flow .node { font-size: 15px; }
+.flow .node em { font-size: 13.5px; }
+.chip { font-size: 15px; }
+.tagline { font-size: 14.5px; }
+.kv .it b { font-size: 16.5px; }
+.kv .it span { font-size: 16.5px; }
+.tbl th { font-size: 15.5px; }
+.tbl th, .tbl td { padding: 12px 14px; }
+.card > p { font-size: 17.5px; }
+.summary-box li { font-size: 16.5px; }
+.fig .cap, .fig .figcap { font-size: 15.5px; }
+.quiz .stem .idx { font-size: 14.5px; }
+.quiz .opt { font-size: 16.5px; }
+.quiz .qexp { font-size: 16.5px; }
+.demo .demo-t { font-size: 16px; }
+.demo label { font-size: 15.5px; }
+.demo input[type=number], .demo input[type=text], .demo select { font-size: 16px; }
+.demo .btn { font-size: 15.5px; }
+.demo .box b { font-size: 13.5px; }
+.step { font-size: 15px; }
+.step .n { font-size: 13.5px; }
+pre { font-size: 15px; }
+.badge { font-size: 13px; }
+.en { font-size: 15.5px; }
+
+/* ---------- 投影模式：进一步放大 ---------- */
+body.presentation-mode { font-size: 19.5px; }
+body.presentation-mode .card > p { font-size: 18.5px; line-height: 1.82; }
+body.presentation-mode .card li { font-size: 18px; line-height: 1.78; }
+body.presentation-mode .card h4 { font-size: 1.15rem; }
+body.presentation-mode .kv .it b { font-size: 17.5px; }
+body.presentation-mode .kv .it span { font-size: 17.5px; }
+body.presentation-mode .summary-box li { font-size: 17.5px; line-height: 1.72; }
+body.presentation-mode .fig .cap,
+body.presentation-mode .fig .figcap { font-size: 16.5px; }
+body.presentation-mode .quiz .stem { font-size: 19.5px; }
+body.presentation-mode .quiz .stem .idx { font-size: 15.5px; }
+body.presentation-mode .quiz .opt { font-size: 18px; padding: 13px 16px; }
+body.presentation-mode .quiz .qexp { font-size: 17.5px; }
+body.presentation-mode .demo .demo-t { font-size: 17px; }
+body.presentation-mode .demo label { font-size: 16.5px; }
+body.presentation-mode .demo input[type=number],
+body.presentation-mode .demo input[type=text],
+body.presentation-mode .demo select { font-size: 17px; }
+body.presentation-mode .demo .btn { font-size: 16.5px; }
+body.presentation-mode .demo .box b { font-size: 15px; }
+body.presentation-mode .step { font-size: 16px; }
+body.presentation-mode .step .n { font-size: 14.5px; }
+body.presentation-mode .tbl table { font-size: 15px; }
+body.presentation-mode .tbl th { font-size: 14.5px; }
+body.presentation-mode .tbl th, body.presentation-mode .tbl td { padding: 7px 11px; }
+body.presentation-mode pre { font-size: 15.5px; }
+body.presentation-mode .flow .node { font-size: 16px; }
+body.presentation-mode .flow .node b { font-size: 16.5px; }
+body.presentation-mode .flow .node span { font-size: 14.5px; }
+body.presentation-mode .en { font-size: .95em; line-height: 1.6; border-left-color: rgba(2, 132, 199, .48); }
+body.presentation-mode .en code { font-size: .92em; }
+body.presentation-mode .en.td { font-size: 13.5px; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 760px) {
+  .wrap { padding: 0 16px; }
+  section { padding: 40px 0 8px; }
+  .hero { padding: 36px 0 32px; }
+  nav .brand { display: none; }   /* 窄屏收起章节文字，给导航链接让位 */
+  nav .qbtn { font-size: 13px; padding: 6px 10px; }
+  h2 { font-size: 1.35rem; }
+  .card { padding: 18px 16px; }
+  .flow .node { min-width: 90px; font-size: 13px; }
+  .quiz .opts { grid-template-columns: 1fr; }
+  .kv .it { grid-template-columns: 1fr; gap: 4px; }
+}
+@media (max-width: 640px) {
+  .qz-widget { width: min(300px, calc(100vw - 28px)); right: 14px; bottom: 80px; }
+  .presenter-bar { gap: 5px; padding: 8px 6px calc(8px + env(safe-area-inset-bottom)); }
+  .presenter-bar button { padding: 7px 6px; font-size: 12px; }
+  .presenter-bar .p-count { font-size: 11px; }
+}
+/* 矮屏（投影仪 720p / 笔记本 768p）：收紧上下留白，把空间让给正文 */
+@media (max-height: 800px) {
+  :root { --deck-gutter: 16px; }
+  body.presentation-mode > section.deck-on .sec-head { margin-bottom: 6px; }
+  body.presentation-mode > section.deck-on .sec-lead { margin-bottom: 8px; }
+}
+
+/* ---------- 打印讲义 ---------- */
+@media print {
+  nav, .progress, .back-top, .qz-widget, .presenter-bar, .presentation-launch,
+  .deck-head, .deck-outline { display: none !important; }
+  body { background: #fff; color: #111827; font-size: 12pt; }
+  .hero, .map, section { display: block !important; break-inside: avoid-page; }
+  section { padding: 18px 0 6px; }
+  .card, .summary-box, .fig, .demo { box-shadow: none; break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+  .q-reveal { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) { .presenter-progress { transition: none; } }
+
+/* ============================================================
+   10 动画
+   ============================================================ */
+@keyframes chFadeUp  { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes chFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes chDropIn  { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+@keyframes chPulse   { 0%, 100% { opacity: .38; } 50% { opacity: 1; } }
+@keyframes chMarch   { to { stroke-dashoffset: -28; } }
+@keyframes chDraw    { from { stroke-dashoffset: 240; } to { stroke-dashoffset: 0; } }
+@keyframes chSpin    { to { transform: rotate(360deg); } }
+@keyframes chBlink   { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+
+.anim-in    { animation: chFadeUp .75s ease both; }
+.anim-drop  { animation: chDropIn .6s ease both; }
+.anim-pulse { animation: chPulse 2.4s ease-in-out infinite; }
+.anim-dash  { stroke-dasharray: 8 6; animation: chMarch 1.5s linear infinite; }
+.anim-draw  { stroke-dasharray: 240; animation: chDraw 1.6s ease both; }
+.anim-flow, .anim-flow2, .anim-flow3 { animation: chFadeIn 1s ease both; }
+
+@keyframes chDrawEx { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+.anim-draw-ex { stroke-dasharray: var(--len); animation: chDrawEx 1.8s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-in, .anim-drop, .anim-dash, .anim-draw, .anim-draw-ex, .anim-flow,
+  .anim-flow2, .anim-flow3 { animation: none; }
+  .anim-pulse, .anim-spin { animation: none; opacity: 1; }
+}
+@media print {
+  .anim-in, .anim-drop, .anim-dash, .anim-draw, .anim-draw-ex, .anim-flow,
+  .anim-flow2, .anim-flow3, .anim-pulse, .anim-spin {
+    animation: none !important; opacity: 1 !important; transform: none !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     ▌模板说明（可整段删除，不影响功能）
+     ------------------------------------------------------------
+     这是一个「幻灯片式讲义」模板，单文件、零依赖，直接双击打开即可。
+     两种阅读方式：
+       A. 网页讲义：正常滚动阅读，导航栏高亮当前小节。
+       B. 演示模式：点「▶ 演示模式」或按 P 键进入，逐页翻讲。
+
+     快捷键（演示模式）：
+       → / 空格 / PageDown  下一页      ← / PageUp / Shift+空格  上一页
+       Home / End          首尾页       O  大纲面板              Q  随机提问
+       F  全屏             K  要点/全文切换              Esc  退出演示
+
+     写法指引：
+       ① 复制 <section> 整块即可新增一个小节，并同步在导航栏加一个 <a href="#s2">。
+       ② 卡片（.card）内的 .part-start 会把一张卡片拆成多页；不加就是一页。
+       ③ 课堂练习（.quiz）自动「一题一屏」，data-a="B" 是正确答案。
+       ④ 交互演示（.demo）需要自己写 JS，示例见文末第三个 script。
+     ============================================================ -->
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<!-- ===== 导航 ===== -->
+<nav>
+  <div class="wrap">
+    <a class="brand-logo" href="#" aria-label="返回首页">
+      <span class="logo-icon-wrapper" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="5"/><line x1="15" y1="2" x2="15" y2="5"/><line x1="9" y1="19" x2="9" y2="22"/><line x1="15" y1="19" x2="15" y2="22"/><line x1="2" y1="9" x2="5" y2="9"/><line x1="2" y1="15" x2="5" y2="15"/><line x1="19" y1="9" x2="22" y2="9"/><line x1="19" y1="15" x2="22" y2="15"/></svg>
+      </span>
+      <span class="brand-title">CSAI</span>
+    </a>
+    <div class="brand">第 <b>3</b> 章 · 章节名 <b>3-1</b> 小节名</div>
+    <div class="navlinks" id="navlinks">
+      <a href="#s1">1 小节标题</a>
+      <a href="#s2">2 小节标题</a>
+      <a href="#res">资源</a>
+    </div>
+    <button class="qbtn" id="navQz" type="button" title="随机提问（Q）">随机提问</button>
+    <button class="presentation-launch" id="presentationLaunch" type="button" aria-pressed="false" title="进入演示模式（快捷键 P）">▶ 演示模式</button>
+  </div>
+</nav>
+
+<!-- ===== 封面（演示模式第 1 页） ===== -->
+<header class="hero">
+  <div class="wrap">
+    <div class="chip-row">
+      <div class="chip"><b>要点 1</b><span>副说明</span></div>
+      <div class="chip"><b>要点 2</b><span>副说明</span></div>
+      <div class="chip"><b>要点 3</b><span>副说明</span></div>
+      <div class="chip"><b>要点 4</b><span>副说明</span></div>
+    </div>
+    <h1>章节主标题：<br>从<span class="hl">关键词 A</span>到<span class="hl">关键词 B</span></h1>
+    <p class="sub">一句话导语：用一两句话讲清楚这节课要解决的问题。</p>
+    <div class="tagline">
+      <span>主线一</span><span>主线二</span><span>主线三</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== 知识地图（演示模式第 2 页） ===== -->
+<div class="map">
+  <div class="wrap">
+    <h2>本节知识地图</h2>
+    <p style="color:var(--mut);font-size:15.5px">两条主线：先看<strong>第一条主线</strong>，再看<strong>第二条主线</strong>。</p>
+    <div class="flow">
+      <div class="node"><b>节点 1</b><span>说明</span></div>
+      <div class="arr">→</div>
+      <div class="node"><b>节点 2</b><span>说明</span></div>
+      <div class="arr">→</div>
+      <div class="node"><b>节点 3</b><span>说明</span></div>
+      <div class="arr">→</div>
+      <div class="node"><b>节点 4</b><span>说明</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================== 示例小节 1 -->
+<!--
+  ✎ 小节骨架：
+     <section id="sN" style="--acc:var(--cyan)">
+       <div class="wrap">
+         <div class="sec-head">…</div>
+         [若干内容块：.card / .fig / .demo / .tbl / .summary-box / .quiz]
+       </div>
+     </section>
+     颜色变量：--cyan(蓝) / --amber(橙) / --violet(紫) / --green(绿)
+-->
+<section id="s1" style="--acc:var(--cyan)">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num" style="color:var(--cyan);border-color:rgba(59,225,255,.4)">01</div>
+      <div><h2><b>SECTION 1</b>小节标题</h2>
+      <p class="sec-lead">一句话导语：这一节要回答什么问题。</p></div>
+    </div>
+
+    <!-- ① 内容卡片：一段正文 + 键值表 -->
+    <div class="card" style="--acc:var(--cyan)">
+      <h3>卡片标题<span class="sub">English Subtitle</span></h3>
+      <p>正文段落。这里写这一张卡片要讲的核心内容，建议 2–4 句，句句有信息量。
+        <span class="en">Optional bilingual note: an English counterpart of the key definition goes here.</span></p>
+      <div class="kv">
+        <div class="it"><b>概念名</b><span>一句话解释这个概念。</span></div>
+        <div class="it"><b>概念名</b><span>一句话解释这个概念。</span></div>
+        <div class="it"><b>概念名</b><span>一句话解释这个概念。</span></div>
+      </div>
+      <div class="tipbox"><b>提示：</b>提示框写「关键提示 / 易错点」。</div>
+    </div>
+
+    <!-- ② 图示：整块 .fig 会被当成独立一页 -->
+    <div class="fig" style="--acc:var(--cyan)">
+      <svg viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="示例示意图">
+        <defs>
+          <linearGradient id="tplG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#0ea5e9" stop-opacity=".26"/>
+            <stop offset="1" stop-color="#0ea5e9" stop-opacity=".06"/>
+          </linearGradient>
+          <marker id="tplArrow" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L6.5,3.2 L0,6.4 Z" fill="#0369a1"/>
+          </marker>
+        </defs>
+        <g class="anim-in">
+          <rect x="90" y="70" width="200" height="86" rx="12" fill="url(#tplG)" stroke="#0369a1" stroke-width="1.8"/>
+          <text x="190" y="108" text-anchor="middle" fill="#075985" font-size="17" font-weight="700">第一层</text>
+          <text x="190" y="132" text-anchor="middle" fill="#0369a1" font-size="13">Level One</text>
+        </g>
+        <g class="anim-in" style="animation-delay:.12s">
+          <line x1="300" y1="113" x2="600" y2="113" stroke="#0369a1" stroke-width="2.2" marker-end="url(#tplArrow)" class="anim-dash"/>
+          <text x="450" y="98" text-anchor="middle" fill="#64748b" font-size="13">逐层抽象</text>
+        </g>
+        <g class="anim-in" style="animation-delay:.24s">
+          <rect x="610" y="70" width="200" height="86" rx="12" fill="url(#tplG)" stroke="#0369a1" stroke-width="1.8"/>
+          <text x="710" y="108" text-anchor="middle" fill="#075985" font-size="17" font-weight="700">第二层</text>
+          <text x="710" y="132" text-anchor="middle" fill="#0369a1" font-size="13">Level Two</text>
+        </g>
+        <g class="anim-in" style="animation-delay:.34s">
+          <text x="450" y="206" text-anchor="middle" fill="#334155" font-size="13" font-weight="700">图注文字：说明这张图在讲什么</text>
+        </g>
+      </svg>
+      <div class="figcap">图 1 示例：换成你的示意图（把 SVG 整段替换即可）</div>
+    </div>
+
+    <!-- ③ 表格 + 交互演示：两种常见内容块 -->
+    <div class="card" style="--acc:var(--cyan)">
+      <h3>表格示例<span class="sub">对照表</span></h3>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>第一列</th><th>第二列</th><th>第三列</th></tr></thead>
+          <tbody>
+            <tr><td>行 1</td><td>说明</td><td>备注</td></tr>
+            <tr><td>行 2</td><td>说明</td><td>备注</td></tr>
+            <tr><td>行 3</td><td>说明</td><td>备注</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- 对照卡片：两种方案并排 -->
+      <div class="cmp2">
+        <div class="cmp arch">
+          <h4>方案 A</h4>
+          <div class="cmp-focus">一句话概括。</div>
+          <ul>
+            <li>要点 1</li>
+            <li>要点 2</li>
+          </ul>
+        </div>
+        <div class="cmp org">
+          <h4>方案 B</h4>
+          <div class="cmp-focus">一句话概括。</div>
+          <ul>
+            <li>要点 1</li>
+            <li>要点 2</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-t">交互演示 · 示例<span class="badge">整块 .demo 会成为独立一页</span></div>
+      <div>
+        <label>输入</label>
+        <input type="text" id="tplNum" value="1010" size="10">
+        <label>源进制</label><select id="tplFrom"></select>
+        <label>目标进制</label><select id="tplTo"></select>
+        <button class="btn" id="tplGo" type="button">转换</button>
+      </div>
+      <div class="out">
+        <div class="box"><b>十进制</b><div class="v" id="tplDec">—</div></div>
+        <div class="box"><b>二进制</b><div class="v" id="tplBin">—</div></div>
+        <div class="box"><b>目标进制</b><div class="v" id="tplOut">—</div></div>
+      </div>
+      <div class="steps show" id="tplSteps"></div>
+    </div>
+
+    <!-- ④ 小结：一句话总结 + 要点小结（自动合并为一页） -->
+    <div class="sum1"><b>一句话总结：</b>这一节的核心结论，一句话讲完。</div>
+    <div class="summary-box">
+      <div class="t">本节小结</div>
+      <ul>
+        <li>要点一：……</li>
+        <li>要点二：……</li>
+        <li>要点三：……</li>
+      </ul>
+    </div>
+
+    <!-- ⑤ 课堂练习：一题一屏，data-a 是正确答案 -->
+    <div class="quiz-head"><span class="qn">?</span>课堂练习 · 小节标题</div>
+    <div class="quiz" style="--acc:var(--cyan)" data-sec="s1">
+      <div class="q" data-a="C">
+        <div class="stem"><span class="idx">1</span>示例题干：<strong>这里写问题</strong>（　　）。</div>
+        <div class="opts">
+          <button class="opt" type="button"><span class="k">A</span>选项 A</button>
+          <button class="opt" type="button"><span class="k">B</span>选项 B</button>
+          <button class="opt" type="button"><span class="k">C</span>选项 C</button>
+          <button class="opt" type="button"><span class="k">D</span>选项 D</button>
+        </div>
+        <div class="qexp"><b>解析：</b><span class="ans-line">参考答案：C</span><br>解析文字：为什么选 C。</div>
+      </div>
+      <div class="q" data-a="B">
+        <div class="stem"><span class="idx">2</span>示例题干：再出一道题验证<strong>分页逻辑</strong>（　　）。</div>
+        <div class="opts">
+          <button class="opt" type="button"><span class="k">A</span>选项 A</button>
+          <button class="opt" type="button"><span class="k">B</span>选项 B</button>
+          <button class="opt" type="button"><span class="k">C</span>选项 C</button>
+          <button class="opt" type="button"><span class="k">D</span>选项 D</button>
+        </div>
+        <div class="qexp"><b>解析：</b><span class="ans-line">参考答案：B</span><br>解析文字。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== 示例小节 2 -->
+<!-- ✎ 复制上面整个 <section> 即可新增小节，并同步更新导航栏与本页 id -->
+<section id="s2" style="--acc:var(--amber)">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num" style="color:var(--amber);border-color:rgba(255,199,102,.4)">02</div>
+      <div><h2><b>SECTION 2</b>小节标题</h2>
+      <p class="sec-lead">一句话导语：这一节要回答什么问题。</p></div>
+    </div>
+
+    <div class="card" style="--acc:var(--amber)">
+      <h3>卡片标题<span class="sub">English Subtitle</span></h3>
+      <p>正文段落。演示模式下，内容超出一屏时，引擎会自动折叠成「要点视图」，按 K 键可切回全文。</p>
+      <div class="warn"><b>注意：</b>警示框用于强调易错点或反直觉结论。</div>
+    </div>
+
+    <div class="sum1"><b>一句话总结：</b>这一节的核心结论。</div>
+    <div class="summary-box">
+      <div class="t">本节小结</div>
+      <ul>
+        <li>要点一：……</li>
+        <li>要点二：……</li>
+      </ul>
+    </div>
+
+    <div class="quiz-head"><span class="qn">?</span>课堂练习 · 小节标题</div>
+    <div class="quiz" style="--acc:var(--amber)" data-sec="s2">
+      <div class="q" data-a="A">
+        <div class="stem"><span class="idx">1</span>示例题干（　　）。</div>
+        <div class="opts">
+          <button class="opt" type="button"><span class="k">A</span>选项 A</button>
+          <button class="opt" type="button"><span class="k">B</span>选项 B</button>
+          <button class="opt" type="button"><span class="k">C</span>选项 C</button>
+          <button class="opt" type="button"><span class="k">D</span>选项 D</button>
+        </div>
+        <div class="qexp"><b>解析：</b><span class="ans-line">参考答案：A</span><br>解析文字。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== 资源 -->
+<section id="res" style="--acc:var(--cyan)">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num" style="color:var(--cyan);border-color:rgba(59,225,255,.4)">↗</div>
+      <div><h2><b>EXTRA</b>课后作业与延伸学习资源</h2>
+      <p class="sec-lead">课后作业与拓展建议</p></div>
+    </div>
+
+    <div class="card" style="--acc:var(--cyan)">
+      <h3>课后作业<span class="sub">两道开放题</span></h3>
+      <ol class="trends">
+        <li><strong>作业一</strong>：开放题描述……</li>
+        <li><strong>作业二</strong>：开放题描述……</li>
+      </ol>
+    </div>
+
+    <div class="res-grid">
+      <div class="res-card">
+        <h4>资源名称</h4>
+        <div class="url">example.com</div>
+        <p>一句话说明这个资源为什么值得看。</p>
+      </div>
+      <div class="res-card">
+        <h4>资源名称</h4>
+        <a class="url" href="https://example.com" target="_blank" rel="noopener">example.com</a>
+        <p>带链接的资源，链接可点击。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    课程名 · <a href="#">返回导航首页</a><br>
+    第 3 章 章节名 · 3-1 小节名 · 课堂讲义<br>
+    提示：按 P 进入演示模式，按 Q 随机提问。
+  </div>
+</footer>
+
+<!-- ===== 随机提问浮窗 ===== -->
+<div class="qz-widget" id="qzWidget">
+  <div class="qz-head">
+    <span><b>随机提问</b><span class="date" id="qzDate"></span></span>
+    <button class="qz-fold" id="qzFold" type="button" title="收起 / 展开">×</button>
+  </div>
+  <div class="qz-body" id="qzBody">
+    <div class="qz-classes" id="qzClasses"></div>
+    <div class="qz-result">
+      <div class="tip" id="qzTip">点击下方按钮开始</div>
+      <div class="nm" id="qzNm" style="display:none"></div>
+      <div class="id" id="qzId" style="display:none"></div>
+    </div>
+    <button class="qz-toggle" id="qzToggle" type="button">开始随机提问</button>
+    <div class="qz-rows" id="qzRows">
+      <button id="qzImport" type="button">导入班级</button>
+      <button id="qzManage" type="button">管理名单</button>
+      <button id="qzRecord" type="button">提问记录</button>
+    </div>
+    <div class="qz-note" id="qzNote"></div>
+    <div class="qz-list" id="qzList"></div>
+    <div class="qz-stats">
+      <span>今日已提问：<b id="qzCount">0/0</b></span>
+      <button id="qzClear" type="button">清空今日</button>
+    </div>
+  </div>
+</div>
+
+<button class="back-top" id="backTop" aria-label="返回顶部">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<!-- ===== 演示模式：顶栏（章节面包屑） ===== -->
+<div class="deck-head" id="deckHead" aria-hidden="true">
+  <span class="dh-brand">3-1 · <b>小节名</b></span>
+  <span class="dh-sep">›</span>
+  <span class="dh-crumb" id="deckCrumb">章节封面</span>
+  <span class="dh-spacer"></span>
+  <span class="dh-badge" id="deckBadge" data-kind="content" hidden></span>
+</div>
+
+<!-- ===== 演示模式：大纲面板（知识结构导航） ===== -->
+<div class="deck-outline" id="deckOutline" role="dialog" aria-label="幻灯片大纲" aria-hidden="true">
+  <div class="do-head">幻灯片大纲 <span>点击跳转 · O 开关 · Esc 关闭</span></div>
+  <div class="do-body" id="deckOutlineList"></div>
+</div>
+
+<!-- ===== 演示模式：控制条 ===== -->
+<div class="presenter-bar" id="presenterBar" role="toolbar" aria-label="演示控制" aria-hidden="true">
+  <div class="presenter-progress" id="presenterProgress"></div>
+  <button type="button" id="presenterPrev" title="上一页（← / PageUp / Shift+空格）" aria-label="上一页">← 上一页</button>
+  <button type="button" id="presenterNext" title="下一页（→ / 空格 / PageDown）" aria-label="下一页">下一页 →</button>
+  <span class="p-count" id="presenterCount">1 / 1</span>
+  <span class="p-spacer"></span>
+  <button type="button" id="presenterOutline" aria-pressed="false" title="幻灯片大纲（O）">大纲</button>
+  <button type="button" id="presenterQz" aria-pressed="false" title="随机提问（Q）">随机提问</button>
+  <button type="button" id="presenterFullscreen" title="切换全屏（F）">全屏</button>
+  <button type="button" class="p-exit" id="presenterExit" title="退出演示（Esc）">退出</button>
+</div>
+<p id="deckLive" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></p>
+
+<script>
+/* ============================================================
+   课堂练习 / 随机提问 / 阅读进度
+   ============================================================ */
+
+/* ===== 课堂练习：作答 + 重新作答 + 揭晓答案 ===== */
+document.querySelectorAll('.quiz .q').forEach(function (q) {
+  var opts = q.querySelectorAll('.opt');
+  var ans = (q.getAttribute('data-a') || '').trim();
+  var exp = q.querySelector('.qexp');
+
+  function reset() {
+    q.classList.remove('done');
+    opts.forEach(function (x) {
+      x.disabled = false;
+      x.classList.remove('correct', 'wrong');
+    });
+    if (exp) {
+      exp.classList.remove('show');
+      var r = exp.querySelector('.retry');
+      if (r) r.remove();
+    }
+  }
+
+  function showRetry() {
+    if (!exp) return;
+    if (exp.querySelector('.retry')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'retry';
+    btn.textContent = '重新作答';
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      reset();
+    });
+    exp.appendChild(btn);
+  }
+
+  function reveal(chosen) {
+    if (q.classList.contains('done')) return;
+    q.classList.add('done');
+    opts.forEach(function (x) { x.disabled = true; });
+    if (chosen === ans) {
+      opts.forEach(function (x) {
+        if (x.querySelector('.k').textContent.trim() === ans) x.classList.add('correct');
+      });
+    } else {
+      opts.forEach(function (x) {
+        var k = x.querySelector('.k').textContent.trim();
+        if (k === chosen) x.classList.add('wrong');
+        else if (k === ans) x.classList.add('correct');
+      });
+    }
+    if (exp) {
+      exp.classList.add('show');
+      showRetry();
+    }
+  }
+
+  opts.forEach(function (o) {
+    o.addEventListener('click', function () {
+      reveal(o.querySelector('.k').textContent.trim());
+    });
+  });
+
+  /* 演示模式：无需点击选项，直接揭晓参考答案 */
+  var revealBtn = document.createElement('button');
+  revealBtn.type = 'button';
+  revealBtn.className = 'q-reveal';
+  revealBtn.textContent = '揭晓答案';
+  revealBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    reveal(ans);
+  });
+  q.appendChild(revealBtn);
+});
+
+/* ===== 随机提问（导航栏按钮 / 控制条按钮 均可开关浮窗） ===== */
+(function(){
+  var CLASS_ID = 'ch-template';          // ✎ 改成你自己的章节标识（localStorage 键）
+  var STORAGE_KEY = 'qzr_' + CLASS_ID;
+  var CLASS_KEYS = ['班级1','班级2'];     // ✎ 改成你的班级列表
+  var ROSTER_BY_CLASS = {                // ✎ 默认名单，也可点「导入班级」粘贴
+    '班级1': [
+      {id:'20260101', name:'张一'},{id:'20260102', name:'李二'},{id:'20260103', name:'王三'},{id:'20260104', name:'赵四'}
+    ],
+    '班级2': [
+      {id:'20260201', name:'钱五'},{id:'20260202', name:'孙六'},{id:'20260203', name:'周七'},{id:'20260204', name:'吴八'}
+    ]
+  };
+  var state = { cls: '班级1', running: false, timer: null, roster: {}, asked: {}, logs: {} };
+  var today = (function(){ var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
+  function load(){
+    try {
+      var s = localStorage.getItem(STORAGE_KEY);
+      if (s) { var o = JSON.parse(s); if (o.roster) state.roster = o.roster; if (o.asked) state.asked = o.asked; if (o.logs) state.logs = o.logs; }
+    } catch(e){}
+  }
+  function save(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({roster: state.roster, asked: state.asked, logs: state.logs})); } catch(e){}
+  }
+  function roster(cls){
+    if (state.roster[cls] && state.roster[cls].length) return state.roster[cls];
+    return ROSTER_BY_CLASS[cls] || [];
+  }
+  function todayLog(){
+    if (!state.logs[today]) state.logs[today] = {};
+    if (!state.logs[today][state.cls]) state.logs[today][state.cls] = [];
+    return state.logs[today][state.cls];
+  }
+  function askSet(){
+    if (!state.asked[today]) state.asked[today] = {};
+    if (!state.asked[today][state.cls]) state.asked[today][state.cls] = [];
+    return state.asked[today][state.cls];
+  }
+  function pickOne(){
+    var pool = roster(state.cls).filter(function(p){ return askSet().indexOf(p.id) < 0; });
+    if (!pool.length){ askSet().length = 0; pool = roster(state.cls).slice(); }
+    if (!pool.length) return {id:'', name:'（名单为空）'};
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  var elDate = document.getElementById('qzDate'), elCls = document.getElementById('qzClasses'), elTip = document.getElementById('qzTip'),
+      elNm = document.getElementById('qzNm'), elId = document.getElementById('qzId'), elToggle = document.getElementById('qzToggle'),
+      elNote = document.getElementById('qzNote'), elList = document.getElementById('qzList'), elCount = document.getElementById('qzCount'),
+      elFold = document.getElementById('qzFold'), elWidget = document.getElementById('qzWidget'),
+      elNavQz = document.getElementById('navQz');
+  if (!elWidget || !elNavQz) return;
+  function renderCls(){
+    if (!elCls) return;
+    elCls.innerHTML = '';
+    CLASS_KEYS.forEach(function(k){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = k;
+      if (k === state.cls) b.classList.add('on');
+      b.addEventListener('click', function(){
+        stopRoll(); state.cls = k; renderCls(); renderCount();
+        if (elTip) elTip.style.display = '';
+        if (elNm) elNm.style.display = 'none';
+        if (elId) elId.style.display = 'none';
+      });
+      elCls.appendChild(b);
+    });
+  }
+  function renderCount(){
+    if (!elCount) return;
+    var r = roster(state.cls), a = askSet();
+    elCount.textContent = a.length + '/' + r.length;
+  }
+  function roll(){
+    var p = pickOne();
+    if (elTip) elTip.style.display = 'none';
+    if (elNm){ elNm.style.display = ''; elNm.textContent = p.name; }
+    if (elId){ elId.style.display = ''; elId.textContent = p.id; }
+  }
+  function stopRoll(){
+    if (!state.running) return;
+    state.running = false;
+    clearInterval(state.timer);
+    if (elToggle){ elToggle.textContent = '开始随机提问'; elToggle.classList.remove('on'); }
+    var p = pickOne();
+    if (elTip) elTip.style.display = 'none';
+    if (elNm){ elNm.style.display = ''; elNm.textContent = p.name; }
+    if (elId){ elId.style.display = ''; elId.textContent = p.id; }
+    if (p.id && askSet().indexOf(p.id) < 0) askSet().push(p.id);
+    if (p.id) todayLog().push({t: new Date().toTimeString().slice(0,5), id: p.id, name: p.name});
+    save();
+    renderCount();
+  }
+  function toggleRoll(){
+    if (state.running){ stopRoll(); return; }
+    state.running = true;
+    if (elToggle){ elToggle.textContent = '停止 · 定格'; elToggle.classList.add('on'); }
+    roll();
+    state.timer = setInterval(roll, 80);
+  }
+  function showLog(){
+    var list = todayLog();
+    if (!list.length){
+      if (elNote){ elNote.textContent = '今天还没有提问记录。'; elNote.style.display = 'block'; }
+      if (elList) elList.style.display = 'none';
+      return;
+    }
+    if (elNote) elNote.style.display = 'none';
+    if (elList){
+      elList.style.display = 'block';
+      elList.innerHTML = list.slice(-50).reverse().map(function(x){
+        return '<div class="log-line">' + x.t + '　' + x.name + '（' + x.id + '）</div>';
+      }).join('');
+    }
+  }
+  function showManage(){
+    var r = roster(state.cls);
+    if (elList) elList.style.display = 'block';
+    if (elNote) elNote.style.display = 'none';
+    if (!elList) return;
+    elList.innerHTML = r.map(function(p, i){
+      return '<div class="log-line" style="display:flex;justify-content:space-between"><span>' + p.name + '（' + p.id + '）</span><a href="javascript:void(0)" data-i="' + i + '" style="color:#dc2626">删除</a></div>';
+    }).join('');
+    elList.querySelectorAll('a[data-i]').forEach(function(a){
+      a.addEventListener('click', function(){
+        var i = +a.getAttribute('data-i');
+        roster(state.cls).splice(i, 1);
+        save(); renderCount(); showManage();
+      });
+    });
+  }
+  function importData(){
+    var text = prompt('粘贴名单，每行格式：学号 姓名（可先复制 Excel 两列），或直接输入姓名（每行一个）：');
+    if (!text) return;
+    var lines = text.split(/\r?\n/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var parsed = [];
+    lines.forEach(function(line){
+      var m = line.match(/^([0-9A-Za-z\-]+)\s+(.+)$/);
+      if (m) parsed.push({id: m[1], name: m[2].trim()});
+      else parsed.push({id: '', name: line});
+    });
+    var mode = prompt('导入方式：1 = 替换当前班级名单，2 = 追加（默认 2）：');
+    if (mode === '1') state.roster[state.cls] = parsed;
+    else state.roster[state.cls] = roster(state.cls).concat(parsed);
+    save(); renderCount(); showManage();
+    if (elNote){ elNote.textContent = '已导入 ' + parsed.length + ' 人（' + state.cls + '）。'; elNote.style.display = 'block'; }
+  }
+  function toggleWidget(){
+    var open = elWidget.classList.toggle('show');
+    var pb = document.getElementById('presenterQz');
+    if (pb) pb.setAttribute('aria-pressed', open ? 'true' : 'false');
+  }
+  elNavQz.addEventListener('click', toggleWidget);
+  var presenterQz = document.getElementById('presenterQz');
+  if (presenterQz) presenterQz.addEventListener('click', toggleWidget);
+  if (elFold){
+    elFold.addEventListener('click', function(){
+      elWidget.classList.remove('show');
+      if (state.running) stopRoll();
+    });
+  }
+  if (elToggle) elToggle.addEventListener('click', toggleRoll);
+  var elRecord = document.getElementById('qzRecord');
+  var elManage = document.getElementById('qzManage');
+  var elImport = document.getElementById('qzImport');
+  var elClear = document.getElementById('qzClear');
+  if (elRecord) elRecord.addEventListener('click', showLog);
+  if (elManage) elManage.addEventListener('click', showManage);
+  if (elImport) elImport.addEventListener('click', importData);
+  if (elClear) elClear.addEventListener('click', function(){
+    if (confirm('清空今日 ' + state.cls + ' 的提问记录与已问名单？')) {
+      if (!state.asked[today]) state.asked[today] = {};
+      state.asked[today][state.cls] = [];
+      if (!state.logs[today]) state.logs[today] = {};
+      state.logs[today][state.cls] = [];
+      save(); renderCount();
+      if (elNote){ elNote.textContent = '已清空今日记录。'; elNote.style.display = 'block'; }
+      if (elList) elList.style.display = 'none';
+    }
+  });
+  if (elDate) elDate.textContent = today;
+  load();
+  renderCls();
+  renderCount();
+})();
+
+
+/* ===== 进度条 & 返回顶部 & 导航高亮 ===== */
+(function(){
+  var bar = document.getElementById('progress'), backTop = document.getElementById('backTop');
+  var navLinks = document.querySelectorAll('#navlinks a');
+  var sections = [];
+  navLinks.forEach(function(a){
+    var id = a.getAttribute('href');
+    if (id && id.charAt(0) === '#') {
+      var el = document.querySelector(id);
+      if (el) sections.push({el: el, a: a});
+    }
+  });
+  function spy(){
+    var y = window.scrollY + 120;
+    var cur = null;
+    sections.forEach(function(s){
+      if (s.el.offsetTop <= y) cur = s;
+    });
+    navLinks.forEach(function(a){ a.classList.remove('cur'); });
+    if (cur) cur.a.classList.add('cur');
+  }
+  function upd(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop / max * 100) : 0;
+    if (bar) bar.style.width = p + '%';
+    if (backTop) backTop.classList.toggle('show', h.scrollTop > 600);
+    spy();
+  }
+  window.addEventListener('scroll', upd, {passive:true});
+  upd();
+  if (backTop) backTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
+})();
+</script>
+
+<script>
+/* ============================================================
+   幻灯片演示引擎（Projection Deck Engine）
+   ------------------------------------------------------------
+   幻灯片模型 slides[]：
+     {
+       kind      : 'cover' | 'map' | 'content' | 'fig' | 'demo'
+                    | 'summary' | 'exercise'
+       container : 承载该片的顶层元素（header.hero / div.map / section）
+       blocks    : 该片需要显示的区块（section 内 .wrap 的直接子元素）
+       ctx       : 始终可见的小节上下文（sec-head）
+       card      : 需要分片的卡片（可选）
+       partEls   : 卡片内需要显示的元素（可选）
+       focus     : 练习片中当前显示的 .q（可选）
+       scaleEl   : 自适应缩放的作用对象
+       title / badge / sectionId / sectionShort
+     }
+
+   分块规则（只切换 class，不移动任何 DOM 节点）：
+     .card      → 内容片（卡内可用 .part-start 继续切分）
+     .fig       → 图示片
+     .demo      → 交互演示片
+     .sum1 + .summary-box  → 本节小结片
+     .quiz-head + .quiz    → 课堂练习片（一题一屏）
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* ---------- 常量 ---------- */
+  var MIN_SCALE = 0.5;    // 硬下限（再小就看不清了）
+  var READABLE = 0.72;    // 低于此缩放比例即认为「投影字号下不可读」→ 改用要点视图
+  var MAX_ITERS = 4;      // 缩放迭代次数（缩放会改变折行，需迭代收敛）
+
+  /* ---------- DOM ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  var body = document.body;
+  var headEl = $('deckHead');
+  var bar = $('presenterBar');
+  var countEl = $('presenterCount');
+  var progressEl = $('presenterProgress');
+  var prevBtn = $('presenterPrev');
+  var nextBtn = $('presenterNext');
+  var exitBtn = $('presenterExit');
+  var fsBtn = $('presenterFullscreen');
+  var outlineBtn = $('presenterOutline');
+  var qzBtn = $('presenterQz');
+  var outlineEl = $('deckOutline');
+  var outlineList = $('deckOutlineList');
+  var crumbEl = $('deckCrumb');
+  var badgeEl = $('deckBadge');
+  var liveEl = $('deckLive');
+  var launch = $('presentationLaunch');
+
+  if (!bar || !prevBtn || !nextBtn || !exitBtn || !fsBtn) return;
+
+  /* ---------- 工具 ---------- */
+  function isHeading(el) { return !!el && /^H[1-6]$/.test(el.tagName); }
+  function textOf(el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function has(el, cls) { return el && el.classList && el.classList.contains(cls); }
+
+  /* ---------- 状态 ---------- */
+  var model = null;         // { slides, containers }
+  var index = 0;
+  var active = false;
+  var restoreScroll = 0;
+  var printing = false;
+  var manualKey = -1;       // 手动锁定「要点视图」的页码（-1 = 未锁定）
+  var manualKeyOn = false;
+
+  /* ============================================================
+     一、要点提取
+     ============================================================ */
+  function leadTerm(li) {
+    var first = li.firstChild;
+    if (first && first.nodeType === 1 && /^(STRONG|B)$/.test(first.tagName)) {
+      var t = textOf(first);
+      if (t && t.length <= 30) return t;
+    }
+    var full = textOf(li);
+    var parts = full.split(/\s*→\s*|：|:|——|，|,|。|；|;/)
+      .map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.length > 0; });
+    if (!parts.length) return '';
+    var out = parts[0];
+    if (out.length < 14 && /[时后中下]$/.test(out) && parts[1]) out = out + '，' + parts[1];
+    if (out.length > 40) out = out.slice(0, 38) + '…';
+    return out;
+  }
+
+  function extractKeyPoints(els) {
+    var pts = [];
+    function add(t) {
+      t = (t || '').replace(/\s+/g, ' ').trim();
+      if (!t || t.length > 44) return;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i] === t || pts[i].indexOf(t) === 0) return;
+      }
+      pts.push(t);
+    }
+    els.forEach(function (el) {
+      if (has(el, 'sum1')) return;                 // 一句话总结单独处理
+      if (has(el, 'summary-box')) return;          // 小结框不重复成要点
+      // 键值块：左边的名称就是最好的要点
+      el.querySelectorAll('.kv .it > b').forEach(function (b) { add(textOf(b)); });
+      // 小标题
+      if (el.tagName === 'H4') add(textOf(el));
+      el.querySelectorAll('h4').forEach(function (h) { add(textOf(h)); });
+      // 列表项
+      el.querySelectorAll('li').forEach(function (li) { add(leadTerm(li)); });
+      // 表格：取每行第一列作为要点
+      el.querySelectorAll('.tbl tbody tr').forEach(function (tr) {
+        var td = tr.querySelector('td');
+        if (td) add(textOf(td));
+      });
+      // 提示框（要点/记忆点/…）
+      el.querySelectorAll('.warn').forEach(function (w) {
+        add(textOf(w).replace(/^(要点|记忆点|注意|提示)[:：]\s*/, ''));
+      });
+      // 图示标题 / 演示标题
+      el.querySelectorAll('.figcap, .fig .cap, .demo .demo-t').forEach(function (c) { add(textOf(c)); });
+    });
+    return pts;
+  }
+
+  function partSummary(els) {
+    for (var i = 0; i < els.length; i++) {
+      if (has(els[i], 'sum1')) return textOf(els[i]);
+    }
+    return '';
+  }
+
+  /* ============================================================
+     二、构建幻灯片序列
+     ============================================================ */
+  function isSummaryBlock(el) { return has(el, 'sum1') || has(el, 'summary-box'); }
+  function isQuizBlock(el) { return has(el, 'quiz-head') || has(el, 'quiz'); }
+
+  function buildSlides() {
+    var slides = [];
+    var containers = [];
+
+    /* 封面 */
+    var hero = document.querySelector('body > header.hero');
+    if (hero) {
+      containers.push(hero);
+      slides.push({
+        kind: 'cover', container: hero, blocks: [], ctx: new Set(),
+        card: null, partEls: null, focus: null, scaleEl: null,
+        keyEl: null, keyOn: false, points: [], summary: '',
+        title: '章节封面', badge: '', sectionId: '__cover', sectionShort: '章节封面'
+      });
+    }
+
+    /* 知识地图 */
+    var map = document.querySelector('body > div.map');
+    if (map) {
+      containers.push(map);
+      slides.push({
+        kind: 'map', container: map, blocks: [], ctx: new Set(),
+        card: null, partEls: null, focus: null, scaleEl: null,
+        keyEl: null, keyOn: false, points: [], summary: '',
+        title: '本章知识地图', badge: '', sectionId: '__map', sectionShort: '本章知识地图'
+      });
+    }
+
+    /* 各小节 */
+    Array.prototype.forEach.call(document.querySelectorAll('body > section[id]'), function (sec) {
+      var wrap = sec.querySelector(':scope > .wrap');
+      if (!wrap) return;
+      containers.push(sec);
+
+      var secHead = sec.querySelector('.sec-head');
+      var h2 = secHead ? secHead.querySelector('h2') : null;
+      var sectionTitle = sectionLabel(h2);
+      var sectionShort = sectionTitle;
+      var sectionId = sec.id;
+
+      // 小节上下文：始终可见
+      var ctx = new Set();
+      Array.prototype.forEach.call(wrap.children, function (el) {
+        if (has(el, 'sec-head') || has(el, 'sec-lead')) ctx.add(el);
+      });
+
+      // 要点视图容器（每节一个）
+      var keyEl = document.createElement('div');
+      keyEl.className = 'deck-key';
+      wrap.appendChild(keyEl);
+
+      var blocks = Array.prototype.slice.call(wrap.children).filter(function (el) {
+        return el !== keyEl && !ctx.has(el);
+      });
+
+      var i = 0;
+      while (i < blocks.length) {
+        var b = blocks[i];
+
+        /* --- 本节小结 --- */
+        if (isSummaryBlock(b)) {
+          var grp = [];
+          while (i < blocks.length && isSummaryBlock(blocks[i])) { grp.push(blocks[i]); i++; }
+          slides.push({
+            kind: 'summary', container: sec, blocks: grp, ctx: ctx,
+            card: null, partEls: null, focus: null, scaleEl: grp[grp.length - 1],
+            keyEl: keyEl, keyOn: false, points: [], summary: partSummary(grp),
+            title: '本节小结', badge: '本节小结',
+            sectionId: sectionId, sectionShort: sectionShort
+          });
+          continue;
+        }
+
+        /* --- 课堂练习：一题一屏 --- */
+        if (isQuizBlock(b)) {
+          var qgrp = [];
+          while (i < blocks.length && isQuizBlock(blocks[i])) { qgrp.push(blocks[i]); i++; }
+          var quizEl = null;
+          qgrp.forEach(function (el) { if (has(el, 'quiz')) quizEl = el; });
+          var qs = quizEl ? Array.prototype.slice.call(quizEl.querySelectorAll('.q')) : [];
+          if (qs.length) {
+            qs.forEach(function (q, n) {
+              slides.push({
+                kind: 'exercise', container: sec, blocks: qgrp, ctx: ctx,
+                card: null, partEls: null, focus: q, scaleEl: q,
+                keyEl: keyEl, keyOn: false, points: [], summary: '',
+                title: stemOf(q), badge: '课堂练习 ' + (n + 1) + '/' + qs.length,
+                sectionId: sectionId, sectionShort: sectionShort
+              });
+            });
+          } else {
+            slides.push({
+              kind: 'exercise', container: sec, blocks: qgrp, ctx: ctx,
+              card: null, partEls: null, focus: null, scaleEl: qgrp[0],
+              keyEl: keyEl, keyOn: false, points: [], summary: '',
+              title: '课堂练习', badge: '课堂练习',
+              sectionId: sectionId, sectionShort: sectionShort
+            });
+          }
+          continue;
+        }
+
+        /* --- 卡片：可按 .part-start 继续切分 --- */
+        if (has(b, 'card')) {
+          var card = b;
+          var first = card.firstElementChild;
+          var titleEl = isHeading(first) ? first : null;
+          var h3 = card.querySelector('h3');
+          var cardTitle = card.getAttribute('data-slide-title') || headTitle(h3) || sectionTitle;
+          var parts = splitCard(card);
+          // 卡片自己的要点容器（放在卡片内，与图示一起缩放）
+          var cardKey = document.createElement('div');
+          cardKey.className = 'deck-key';
+          card.appendChild(cardKey);
+          parts.forEach(function (part) {
+            var head = part.els[0];
+            var partTitle =
+              (head && head.getAttribute('data-part-title')) ||
+              (head && isHeading(head) ? headTitle(head) : '') ||
+              cardTitle;
+            slides.push({
+              kind: 'content', container: sec, blocks: [card], ctx: ctx,
+              card: card, partEls: part.els, titleEl: titleEl, focus: null, scaleEl: card,
+              keyEl: cardKey, keyOn: false,
+              points: resolvePoints(part), summary: partSummary(part.els),
+              title: partTitle, badge: '',
+              sectionId: sectionId, sectionShort: sectionShort
+            });
+          });
+          i++;
+          continue;
+        }
+
+        /* --- 图示 / 交互演示：各自独立成片 --- */
+        var kind = has(b, 'demo') ? 'demo' : (has(b, 'fig') ? 'fig' : 'content');
+        var cap = b.querySelector('.figcap, .fig .cap, .demo .demo-t');
+        slides.push({
+          kind: kind, container: sec, blocks: [b], ctx: ctx,
+          card: null, partEls: null, focus: null, scaleEl: b,
+          keyEl: keyEl, keyOn: false, points: [], summary: '',
+          title: textOf(cap) || sectionTitle,
+          badge: kind === 'demo' ? '交互演示' : '',
+          sectionId: sectionId, sectionShort: sectionShort
+        });
+        i++;
+      }
+    });
+
+    return { slides: slides, containers: containers };
+  }
+
+  /* 把一张卡片拆成分片 */
+  function splitCard(card) {
+    var kids = Array.prototype.slice.call(card.children).filter(function (el) {
+      return !has(el, 'deck-key');
+    });
+    var parts = [];
+    var cur = null;
+    kids.forEach(function (el) {
+      if (has(el, 'part-start')) {
+        cur = { kind: 'content', els: [el] };
+        parts.push(cur);
+        return;
+      }
+      if (!cur) { cur = { kind: 'content', els: [] }; parts.push(cur); }
+      cur.els.push(el);
+    });
+    return parts.filter(function (p) { return p.els.length > 0; });
+  }
+
+  /* 要点：优先取显式 data-keypoints，否则自动提取 */
+  function resolvePoints(part) {
+    var explicit = '';
+    part.els.forEach(function (el) {
+      if (explicit) return;
+      if (el.getAttribute && el.getAttribute('data-keypoints')) {
+        explicit = el.getAttribute('data-keypoints');
+        return;
+      }
+      var inner = el.querySelector ? el.querySelector('[data-keypoints]') : null;
+      if (inner) explicit = inner.getAttribute('data-keypoints');
+    });
+    if (explicit) {
+      return explicit.split('|')
+        .map(function (s) { return s.trim(); })
+        .filter(function (s) { return s.length > 0; });
+    }
+    return extractKeyPoints(part.els);
+  }
+
+  /* 小节标签：把 <b>SECTION 1</b> 与标题用空格分开 */
+  function sectionLabel(h2) {
+    if (!h2) return '';
+    var clone = h2.cloneNode(true);
+    var parts = [];
+    Array.prototype.forEach.call(clone.childNodes, function (n) {
+      if (n.nodeType === 1 && n.tagName === 'B') {
+        var t = textOf(n);
+        if (t) parts.push(t);
+      } else if (n.nodeType === 3 && n.textContent.trim()) {
+        parts.push(n.textContent.trim());
+      }
+    });
+    return parts.length ? parts.join(' ') : textOf(h2);
+  }
+
+  /* 取标题（去掉 h3 内的 .sub 副标题） */
+  function headTitle(h3) {
+    if (!h3) return '';
+    var clone = h3.cloneNode(true);
+    var sub = clone.querySelector('.sub');
+    if (sub && sub.parentNode) sub.parentNode.removeChild(sub);
+    return textOf(clone);
+  }
+
+  /* 取题干（去掉题号） */
+  function stemOf(q) {
+    var h = q.querySelector('.stem');
+    if (!h) return '课堂练习';
+    var clone = h.cloneNode(true);
+    var n = clone.querySelector('.idx');
+    if (n && n.parentNode) n.parentNode.removeChild(n);
+    return textOf(clone) || '课堂练习';
+  }
+
+  /* ============================================================
+     三、自适应缩放：保证一屏放得下
+     ============================================================ */
+  function fitCard(el, avail) {
+    var k = 1;
+    function apply() {
+      el.style.setProperty('--deck-scale', String(k));
+      void el.offsetHeight;   // 强制回流
+    }
+    apply();
+    for (var i = 0; i < MAX_ITERS; i++) {
+      // 用 getBoundingClientRect 取「真实视觉高度」：
+      // offsetHeight 受 zoom 影响（会被除以 zoom），用它算会失真。
+      var visual = el.getBoundingClientRect().height;
+      if (visual <= avail + 1) break;
+      var next = Math.max(MIN_SCALE, k * (avail / visual));
+      if (Math.abs(next - k) < 0.005) { k = next; apply(); break; }
+      k = next;
+      apply();
+    }
+    return k;
+  }
+
+  function fit(slide) {
+    var target = slide.scaleEl;
+    if (!target) return 1;
+    var wrap = target.parentElement;
+    if (!wrap) return 1;
+    var cs = getComputedStyle(wrap);
+    var avail = wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    Array.prototype.forEach.call(wrap.children, function (c) {
+      if (c === target || c === slide.keyEl) return;
+      if (c.classList.contains('deck-off')) return;
+      var mcs = getComputedStyle(c);
+      avail -= c.getBoundingClientRect().height
+             + parseFloat(mcs.marginTop) + parseFloat(mcs.marginBottom);
+    });
+    // 注意：缩放目标使用 margin-block:auto 做垂直居中，自动外边距会被解析成
+    // 很大的数值（用于吸收剩余空间），它不产生溢出，因此这里不能扣除。
+    avail = Math.max(140, avail - 6);   // 预留余量，吸收亚像素/外边距取整误差
+
+    var k = fitCard(target, avail);
+    for (var i = 0; i < 2; i++) {
+      var h = target.getBoundingClientRect().height;
+      if (h <= avail + 1) break;
+      k = Math.max(MIN_SCALE, k * (avail / h));
+      target.style.setProperty('--deck-scale', String(k));
+    }
+    target.classList.toggle('deck-scroll', target.getBoundingClientRect().height > avail + 2);
+    return k;
+  }
+
+  /* ============================================================
+     四、切换幻灯片
+     ============================================================ */
+  function applyVisibility(s, keyMode, hideFig) {
+    // 先清掉所有要点容器的激活状态（避免上一页的状态残留）
+    document.querySelectorAll('.deck-key.on').forEach(function (el) {
+      el.classList.remove('on');
+    });
+    model.containers.forEach(function (c) {
+      c.classList.toggle('deck-on', c === s.container);
+      c.classList.toggle('deck-off', c !== s.container);
+    });
+    if (!s.container || s.container.tagName === 'HEADER') return;
+    var wrap = s.container.querySelector(':scope > .wrap');
+    if (!wrap) return;
+
+    var keep = new Set(s.blocks);
+    Array.prototype.forEach.call(wrap.children, function (el) {
+      if (el === s.keyEl) return;
+      var isCtx = s.ctx && s.ctx.has(el);
+      // 要点模式下，卡片本身要保留（要点容器就在卡片内部）
+      var isCard = !!s.card && el === s.card;
+      var visible = isCtx || (keep.has(el) && (!keyMode || isCard));
+      el.classList.toggle('deck-off', !visible);
+    });
+
+    // 卡片内分片；要点模式下保留图示，正文收起
+    if (s.card && s.partEls) {
+      var pk = new Set(s.partEls);
+      Array.prototype.forEach.call(s.card.children, function (ch) {
+        if (ch === s.titleEl || ch === s.keyEl) return;
+        if (keyMode) {
+          // 要点模式：尽量保留图示；若装不下（hideFig）则只留要点
+          ch.classList.toggle('deck-off', hideFig ? true : !has(ch, 'fig'));
+        } else {
+          ch.classList.toggle('deck-off', !pk.has(ch));
+        }
+      });
+    }
+
+    // 练习片：只显示当前这一道题
+    var quiz = wrap.querySelector(':scope > .quiz');
+    if (quiz) {
+      quiz.querySelectorAll('.q').forEach(function (q) {
+        q.classList.toggle('deck-off', !!s.focus && q !== s.focus);
+      });
+    }
+
+    // 要点视图
+    if (s.keyEl) {
+      s.keyEl.classList.toggle('on', !!keyMode);
+      if (keyMode) renderKey(s);
+    }
+
+    // 缩放目标（卡片 / 图示 / 演示）
+    document.querySelectorAll('.deck-scale-target').forEach(function (el) {
+      el.classList.remove('deck-scale-target');
+    });
+    if (s.scaleEl) s.scaleEl.classList.add('deck-scale-target');
+  }
+
+  function renderKey(s) {
+    if (!s.keyEl) return;
+    var n = (s.points || []).length;
+    s.keyEl.classList.toggle('dk-cols', n > 8);
+    s.keyEl.classList.toggle('dk-dense', n > 14);
+    var html = '<div class="dk-head">要点 · KEY POINTS</div><ul class="dk-list">';
+    (s.points || []).forEach(function (p) {
+      html += '<li>' + escapeHtml(p) + '</li>';
+    });
+    html += '</ul>';
+    if (s.summary) html += '<div class="dk-sum">' + escapeHtml(s.summary) + '</div>';
+    html += '<div class="dk-hint">本页内容较长，已折叠为要点 · 按 <b>K</b> 键查看完整内容与图示</div>';
+    s.keyEl.innerHTML = html;
+  }
+
+  function show(i) {
+    if (!model || !model.slides.length) return;
+    var n = model.slides.length;
+    index = Math.max(0, Math.min(n - 1, i));   // 到头即停，不循环
+    if (manualKey !== -1 && manualKey !== index) manualKey = -1;
+    var s = model.slides[index];
+
+    applyVisibility(s, false);
+
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === n - 1;
+    if (countEl) countEl.textContent = (index + 1) + ' / ' + n;
+    if (progressEl) {
+      progressEl.style.width = ((index + 1) / n * 100) + '%';
+      progressEl.setAttribute('aria-valuenow', String(index + 1));
+      progressEl.setAttribute('aria-valuemax', String(n));
+    }
+    if (crumbEl) crumbEl.textContent = s.sectionShort || '';
+    if (liveEl) liveEl.textContent = '第 ' + (index + 1) + ' 页，共 ' + n + ' 页：' + s.title;
+
+    var k = fit(s);
+    var wantKey;
+    if (manualKey === index) {
+      wantKey = manualKeyOn;
+    } else {
+      wantKey = (s.kind === 'content' && s.points && s.points.length > 0 && k < READABLE);
+    }
+    s.keyOn = wantKey;
+    applyVisibility(s, s.keyOn, false);
+    if (s.keyOn) {
+      fit(s);
+      if (s.scaleEl && s.scaleEl.classList.contains('deck-scroll')) {
+        // 图示 + 要点仍装不下 → 收起图示，只留要点，保证整屏可见
+        applyVisibility(s, s.keyOn, true);
+        fit(s);
+      }
+    }
+
+    if (badgeEl) {
+      badgeEl.textContent = s.keyOn ? '要点' : (s.badge || '');
+      badgeEl.hidden = !(s.keyOn || s.badge);
+      badgeEl.setAttribute('data-kind', s.keyOn ? 'key' : s.kind);
+    }
+
+    highlightOutline();
+  }
+
+  /* ============================================================
+     五、大纲面板
+     ============================================================ */
+  function renderOutline() {
+    if (!outlineList || !model) return;
+    outlineList.innerHTML = '';
+    var lastId = null;
+    model.slides.forEach(function (s, i) {
+      if (s.sectionId !== lastId) {
+        lastId = s.sectionId;
+        var h = document.createElement('div');
+        h.className = 'do-sec';
+        h.textContent = s.sectionShort;
+        outlineList.appendChild(h);
+      }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'do-item' + (i === index ? ' cur' : '');
+      b.setAttribute('data-idx', String(i));
+      b.title = s.title;
+      var kindLabel = s.kind === 'summary' ? '小结'
+                    : (s.kind === 'exercise' ? '练习'
+                    : (s.kind === 'demo' ? '演示'
+                    : (s.kind === 'fig' ? '图示' : '')));
+      b.innerHTML = '<span class="do-num">' + (i + 1) + '</span>' +
+                    '<span class="do-t">' + escapeHtml(s.title) + '</span>' +
+                    (kindLabel ? '<span class="do-kind" data-kind="' + s.kind + '">' + kindLabel + '</span>' : '');
+      b.addEventListener('click', function () { show(i); closeOutline(); });
+      outlineList.appendChild(b);
+    });
+  }
+
+  function highlightOutline() {
+    if (!outlineList) return;
+    Array.prototype.forEach.call(outlineList.querySelectorAll('.do-item'), function (b) {
+      b.classList.toggle('cur', Number(b.getAttribute('data-idx')) === index);
+    });
+  }
+
+  function openOutline() {
+    if (!outlineEl) return;
+    outlineEl.classList.add('open');
+    outlineEl.setAttribute('aria-hidden', 'false');
+    if (outlineBtn) outlineBtn.setAttribute('aria-pressed', 'true');
+    highlightOutline();
+  }
+  function closeOutline() {
+    if (!outlineEl) return;
+    outlineEl.classList.remove('open');
+    outlineEl.setAttribute('aria-hidden', 'true');
+    if (outlineBtn) outlineBtn.setAttribute('aria-pressed', 'false');
+  }
+  function toggleOutline() {
+    if (!outlineEl) return;
+    if (outlineEl.classList.contains('open')) closeOutline(); else openOutline();
+  }
+
+  /* ============================================================
+     六、进入 / 退出演示模式
+     ============================================================ */
+  function teardown() {
+    body.classList.remove('presentation-mode');
+    if (!model) return;
+    model.containers.forEach(function (el) {
+      el.classList.remove('deck-off', 'deck-on');
+    });
+    // 清掉注入的要点容器与缩放状态，讲义 DOM 完全复原
+    document.querySelectorAll('.deck-key').forEach(function (el) {
+      el.classList.remove('on');
+      el.innerHTML = '';
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+    document.querySelectorAll('.deck-scale-target').forEach(function (el) {
+      el.style.removeProperty('--deck-scale');
+      el.classList.remove('deck-scale-target', 'deck-scroll');
+    });
+    // 兜底：清掉任何残留的内联缩放
+    document.querySelectorAll('[style*="--deck-scale"]').forEach(function (el) {
+      el.style.removeProperty('--deck-scale');
+    });
+  }
+
+  function enter(scrollTo) {
+    if (active) return;
+    if (!model) model = buildSlides();
+    restoreScroll = (typeof scrollTo === 'number') ? scrollTo : window.scrollY;
+    active = true;
+    body.classList.add('presentation-mode');
+    bar.setAttribute('aria-hidden', 'false');
+    if (launch) launch.setAttribute('aria-pressed', 'true');
+    renderOutline();
+    show(0);
+    window.scrollTo(0, 0);
+  }
+
+  function leave() {
+    if (!active) return;
+    active = false;
+    teardown();
+    bar.setAttribute('aria-hidden', 'true');
+    closeOutline();
+    if (launch) {
+      launch.setAttribute('aria-pressed', 'false');
+      launch.focus({ preventScroll: true });
+    }
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(function () {});
+    }
+    window.scrollTo(0, restoreScroll);
+    model = null;          // 下次进入时重建
+  }
+
+  /* ============================================================
+     七、事件绑定
+     ============================================================ */
+  function isTyping(t) {
+    if (!t) return false;
+    if (t.isContentEditable) return true;
+    var tag = t.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  }
+
+  if (launch) launch.addEventListener('click', enter);
+  prevBtn.addEventListener('click', function () { show(index - 1); });
+  nextBtn.addEventListener('click', function () { show(index + 1); });
+  exitBtn.addEventListener('click', leave);
+  if (outlineBtn) outlineBtn.addEventListener('click', toggleOutline);
+  // 随机提问按钮由「随机提问」模块统一绑定，此处不重复绑定
+
+  fsBtn.addEventListener('click', function () {
+    var done = function () {
+      fsBtn.textContent = document.fullscreenElement ? '退出全屏' : '全屏';
+      fsBtn.title = document.fullscreenElement ? '退出演示（F）' : '切换全屏（F）';
+    };
+    if (!document.fullscreenElement) {
+      if (!document.documentElement.requestFullscreen) { done(); return; }
+      document.documentElement.requestFullscreen().then(done).catch(function () {});
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen().then(done).catch(function () {});
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTyping(e.target)) return;      // 仅文本输入框阻断；按钮不再吞掉翻页键
+    var k = e.key;
+
+    if (!active) {
+      if (k === 'p' || k === 'P') { e.preventDefault(); enter(); }
+      return;
+    }
+
+    if (k === ' ' || k === 'Spacebar') {
+      e.preventDefault();
+      if (e.shiftKey) show(index - 1); else show(index + 1);
+      return;
+    }
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown') { e.preventDefault(); show(index + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); show(index - 1); }
+    else if (k === 'Home') { e.preventDefault(); show(0); }
+    else if (k === 'End') { e.preventDefault(); show(model.slides.length - 1); }
+    else if (k === 'Escape') {
+      if (outlineEl && outlineEl.classList.contains('open')) { e.preventDefault(); closeOutline(); }
+      else if (!document.fullscreenElement) { e.preventDefault(); leave(); }
+    }
+    else if (k === 'f' || k === 'F') { e.preventDefault(); fsBtn.click(); }
+    else if (k === 'o' || k === 'O') { e.preventDefault(); toggleOutline(); }
+    else if (k === 'q' || k === 'Q') { e.preventDefault(); if (qzBtn) qzBtn.click(); }
+    else if (k === 'k' || k === 'K') {
+      e.preventDefault();
+      var s = model.slides[index];
+      if (!s || s.kind !== 'content' || !s.points || !s.points.length) return;
+      manualKey = index;
+      manualKeyOn = !s.keyOn;
+      show(index);
+    }
+  });
+
+  document.addEventListener('fullscreenchange', function () {
+    fsBtn.textContent = document.fullscreenElement ? '退出全屏' : '全屏';
+    fsBtn.title = document.fullscreenElement ? '退出演示（F）' : '切换全屏（F）';
+  });
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    if (!active) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { show(index); }, 140);
+  });
+
+  /* 打印讲义：先退出演示态，打印完再回到演示态 */
+  var printScroll = 0;
+  window.addEventListener('beforeprint', function () {
+    if (!active) return;
+    printing = true;
+    printScroll = window.scrollY;
+    active = false;
+    teardown();
+  });
+  window.addEventListener('afterprint', function () {
+    if (!printing) return;
+    printing = false;
+    enter(printScroll);
+  });
+
+  bar.setAttribute('aria-hidden', 'true');
+  if (progressEl) {
+    progressEl.setAttribute('role', 'progressbar');
+    progressEl.setAttribute('aria-label', '演示进度');
+    progressEl.setAttribute('aria-valuemin', '1');
+  }
+})();
+</script>
+
+<script>
+/* ============================================================
+   交互演示示例 · 任意进制转换
+   ------------------------------------------------------------
+   写法说明：
+     ① 给 .demo 容器里的元素一个 id；
+     ② 在这里用 getElementById 拿到它们；
+     ③ 监听点击 / 变更，把结果写回 .box .v 里。
+   演示模式下 .demo 会独立成页，脚本照常工作。
+   ============================================================ */
+(function () {
+  'use strict';
+  var DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  var input = document.getElementById('tplNum');
+  var from = document.getElementById('tplFrom');
+  var to = document.getElementById('tplTo');
+  var go = document.getElementById('tplGo');
+  if (!input || !from || !to || !go) return;
+
+  var outDec = document.getElementById('tplDec');
+  var outBin = document.getElementById('tplBin');
+  var outTo = document.getElementById('tplOut');
+  var steps = document.getElementById('tplSteps');
+
+  [from, to].forEach(function (sel) {
+    for (var b = 2; b <= 36; b++) {
+      var opt = document.createElement('option');
+      opt.value = String(b);
+      opt.textContent = String(b);
+      sel.appendChild(opt);
+    }
+  });
+  from.value = '2';
+  to.value = '10';
+
+  function parseInBase(text, base) {
+    var s = String(text).trim().toUpperCase().replace(/[\s_]/g, '');
+    if (!s) throw new Error('请输入一个数字');
+    var neg = s.charAt(0) === '-';
+    if (neg) s = s.slice(1);
+    var n = 0n;
+    for (var i = 0; i < s.length; i++) {
+      var d = DIGITS.indexOf(s.charAt(i));
+      if (d < 0 || d >= base) throw new Error('字符 “' + s.charAt(i) + '” 不属于 ' + base + ' 进制');
+      n = n * BigInt(base) + BigInt(d);
+    }
+    return neg ? -n : n;
+  }
+
+  function toBase(n, base) {
+    if (n === 0n) return '0';
+    var neg = n < 0n;
+    if (neg) n = -n;
+    var out = '';
+    var b = BigInt(base);
+    while (n > 0n) {
+      out = DIGITS.charAt(Number(n % b)) + out;
+      n = n / b;
+    }
+    return (neg ? '-' : '') + out;
+  }
+
+  function convert() {
+    try {
+      var base = Number(from.value);
+      var dec = parseInBase(input.value, base);
+      outDec.textContent = dec.toString();
+      outBin.textContent = dec === 0n ? '0' : (dec < 0n ? '-' : '') + (dec < 0n ? -dec : dec).toString(2);
+      outTo.textContent = toBase(dec, Number(to.value));
+      if (steps) {
+        steps.innerHTML = '<div class="step"><span class="n">STEP 1</span><span>读入 ' +
+          input.value.trim().toUpperCase() + '（' + base + ' 进制）</span></div>' +
+          '<div class="step hl"><span class="n">STEP 2</span><span>按权展开求和 → 十进制 ' +
+          dec.toString() + '</span></div>' +
+          '<div class="step"><span class="n">STEP 3</span><span>转成 ' + to.value + ' 进制 → ' +
+          toBase(dec, Number(to.value)) + '</span></div>';
+      }
+    } catch (err) {
+      outDec.textContent = '—';
+      outBin.textContent = '—';
+      outTo.textContent = '—';
+      if (steps) steps.innerHTML = '<div class="step"><span class="n">ERROR</span><span>' +
+        (err.message || String(err)) + '</span></div>';
+    }
+  }
+
+  go.addEventListener('click', convert);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') convert(); });
+  from.addEventListener('change', convert);
+  to.addEventListener('change', convert);
+  convert();
+})();
+</script>
+</body>
+</html>
